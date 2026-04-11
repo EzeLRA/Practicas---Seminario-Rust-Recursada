@@ -1,0 +1,8 @@
+Consideracion:
+    Este repositorio es una acontinuacion de "Seminario Rust de 2025"
+    por lo que ciertos ejercicios podran ser identicos al del curso del año pasado
+    con diferencia en orden del repositorio actual y el metodo de resolucion con respecto 
+    a los ejercicios propuestos por la catedra.
+        -- Muchos de los ejercicios del anterior repositorio tendran una resolucion nueva y en lo posible
+        corregida por el curso , por lo que debera considerar comprender el ejercicio y solo tomar las resoluciones
+        planteadas aqui como una referencia y no como una solucion "literal" --
