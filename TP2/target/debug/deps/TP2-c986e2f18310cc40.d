@@ -1,0 +1,8 @@
+C:\Users\Ezequiel\Desktop\UNLP\2doAño UNLP\Seminario Rust Recursada\TP2\target\debug\deps\TP2-c986e2f18310cc40.d: src\main.rs src\tp2\mod.rs src\tp2\ej1.rs src\tp2\ej2.rs
+
+C:\Users\Ezequiel\Desktop\UNLP\2doAño UNLP\Seminario Rust Recursada\TP2\target\debug\deps\libTP2-c986e2f18310cc40.rmeta: src\main.rs src\tp2\mod.rs src\tp2\ej1.rs src\tp2\ej2.rs
+
+src\main.rs:
+src\tp2\mod.rs:
+src\tp2\ej1.rs:
+src\tp2\ej2.rs:
