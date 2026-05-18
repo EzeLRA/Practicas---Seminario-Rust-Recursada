@@ -15,7 +15,7 @@ impl Rectangulo{
         return self.longitud * 2.0 + self.ancho * 2.0
     }
     fn es_cuadrado(&self)->bool{
-        return (self.ancho == self.longitud)
+        return self.ancho == self.longitud
     }
 }
 
