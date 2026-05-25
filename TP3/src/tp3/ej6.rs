@@ -78,7 +78,7 @@ impl Estudiante{
 }
 
 #[cfg(test)]
-mod testing_estudiante{
+mod testing_ejercicio6{
     use super::Estudiante;
     use super::Examen;
 
