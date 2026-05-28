@@ -5,7 +5,7 @@
 ***/
 //Atributos
 #[derive(Debug,Clone)]
-pub struct Fecha{
+struct Fecha{
     pub dia : u8,
     pub mes : u8,
     pub anio : u16
@@ -230,7 +230,7 @@ mod testing_ejercicio10_fecha{
 
 
 #[derive(Debug, Clone)]
-pub enum Genero {
+enum Genero {
     Novela,
     Infantil,
     Tecnico,
@@ -238,13 +238,13 @@ pub enum Genero {
 }
 
 #[derive(Debug, Clone)]
-pub enum Estado {
+enum Estado {
     EnPrestamo,
     Devuelto
 }
 
 #[derive(Debug, Clone)]
-pub struct Libro { 
+struct Libro { 
     isbn : u32,
     titulo: String,
     autor: String,
@@ -253,19 +253,19 @@ pub struct Libro {
 }
 
 #[derive(Debug, Clone)]
-pub struct LibrosDispone {
+struct LibrosDispone {
     libro: Libro,
     cantidad: u32
 }
 
 #[derive(Debug, Clone)]
-pub struct Cliente { 
+struct Cliente { 
     nombre: String,
     telefono: u32,
     correo: String
 }
 #[derive(Debug, Clone)]
-pub struct Prestamo {
+struct Prestamo {
     libro: Libro,
     cliente: Cliente,
     vencimiento: Fecha,
@@ -274,7 +274,7 @@ pub struct Prestamo {
 }
 
 #[derive(Debug)]
-pub struct Biblioteca {
+struct Biblioteca {
     nombre: String,
     direccion: String,
     disponibles: Vec<LibrosDispone>,
@@ -418,7 +418,7 @@ impl Biblioteca {
     }
     
     pub fn prestar(&mut self,cliente:Cliente,libro:&Libro,vencimiento:Fecha) -> bool {
-        if (self.copias(&libro)>0) && (self.prestamos(&cliente)<=5) {
+        if (self.copias(&libro)>0) && (self.prestamos(&cliente)<5) {
             self.prestamos.push(Prestamo::new(&libro.clone(), &cliente, &vencimiento));
             self.decrementar(&libro.clone());
             return true
