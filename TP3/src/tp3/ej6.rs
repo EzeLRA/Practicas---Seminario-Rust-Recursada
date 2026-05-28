@@ -23,7 +23,13 @@ impl Examen{
 impl Estudiante{
     //Metodos secundarios
     pub fn es_igual_a(&self,e:&Estudiante)->bool{
-        return (self.nombre == e.nombre)&&(self.num_id == e.num_id);
+        return (self.nombre == e.get_nombre())&&(self.num_id == e.get_id());
+    }
+    pub fn get_nombre(&self)->String{
+        return self.nombre.clone()
+    }
+    pub fn get_id(&self)->u32{
+        return self.num_id
     }
     pub fn agregar_examen(&mut self,e:&Examen){
         self.examenes.push(e.clone());

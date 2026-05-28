@@ -1,12 +1,7 @@
-/*
-	Estructuras: Concesionario y Autos
-*/
-
-
 
 //Enum
 #[derive(Debug , Clone)]
-pub enum Colores{	
+enum Colores{	
 	//Primarios
 	Rojo,
 	Azul,
@@ -37,7 +32,7 @@ impl Colores{
 
 //Atributos
 #[derive(Debug , Clone)]
-pub struct Auto{
+struct Auto{
     marca : String,
     modelo : String,
     anio : u32,
@@ -46,7 +41,7 @@ pub struct Auto{
 }
 
 #[derive(Debug)]
-pub struct ConcesionarioAuto{
+struct ConcesionarioAuto{
 	nombre : String,
 	direccion : String,
 	capacidad : u32,

@@ -4,7 +4,7 @@
 
 //Atributos
 #[derive(Debug,Clone)]
-pub struct Fecha{
+struct Fecha{
     pub dia : u8,
     pub mes : u8,
     pub anio : u16
@@ -199,34 +199,34 @@ mod testing_ejercicio9_fecha{
 */
 
 #[derive(Debug, Clone)]
-pub enum Animales{
+enum Animales{
     Perro,
     Gato,
     Caballo,
     Otro,
 }
 #[derive(Debug, Clone)]
-pub struct Duenio {
+struct Duenio {
     nombre: String,
     direccion: String,
     telefono: u32
 }
 #[derive(Debug, Clone)]
-pub struct Mascota {
+struct Mascota {
     nombre: String,
     edad: u32,
     tipo: Animales,
     duenio: Duenio
 }
 #[derive(Debug, Clone)]
-pub struct Atencion {
+struct Atencion {
     mascota: Mascota,
     diagnostico: String,
     tratamiento: String,
     proxima_visita: Option<Fecha>
 }
 #[derive(Debug, Clone)]
-pub struct Veterinaria {
+struct Veterinaria {
     nombre: String,
     direccion: String,
     id: u32,
@@ -256,14 +256,17 @@ impl Duenio {
     pub fn get_direccion(&self)->String{
         return self.direccion.clone();
     }
+    pub fn get_num_telefono(&self)->u32{
+        return self.telefono
+    }
     pub fn es_igual_a(&self,d:&Duenio)->bool{
-        return (self.nombre == d.get_nombre())&&(self.direccion == d.get_direccion())&&(self.telefono == d.telefono);
+        return (self.nombre == d.get_nombre())&&(self.direccion == d.get_direccion())&&(self.telefono == d.get_num_telefono());
     }
     //Metodos Primarios
-    pub fn new(nombre_in: String,direccion_in: String,telefono_in: u32) -> Duenio {
+    pub fn new(nombre_in: &String,direccion_in: &String,telefono_in: u32) -> Duenio {
         return Duenio{
-            nombre : nombre_in,
-            direccion : direccion_in,
+            nombre : nombre_in.clone(),
+            direccion : direccion_in.clone(),
             telefono : telefono_in
         }
     }
@@ -275,15 +278,24 @@ impl Mascota {
     pub fn get_nombre(&self)->String{
         return self.nombre.clone();
     }
+    pub fn get_edad(&self)->u32{
+        return self.edad
+    }
+    pub fn get_tipo(&self)->Animales{
+        return self.tipo.clone()
+    }
+    pub fn get_duenio(&self)->Duenio{
+        return self.duenio.clone()
+    }
     pub fn es_igual_a(&self,m:&Mascota)->bool{
-        return (self.nombre == m.get_nombre())&&(self.edad == m.edad)&&(self.tipo.es_igual_a(&m.tipo))&&(self.duenio.es_igual_a(&m.duenio));
+        return (self.nombre == m.get_nombre())&&(self.edad == m.get_edad())&&(self.tipo.es_igual_a(&m.get_tipo()))&&(self.duenio.es_igual_a(&m.get_duenio()));
     }
     //Metodos primarios
-    pub fn new(nombre_in: String,edad_in: u32,tipo_in: Animales,duenio_in: &Duenio) -> Mascota {
+    pub fn new(nombre_in: &String,edad_in: u32,tipo_in: &Animales,duenio_in: &Duenio) -> Mascota {
         return Mascota{
-            nombre : nombre_in,
+            nombre : nombre_in.clone(),
             edad : edad_in,
-            tipo : tipo_in,
+            tipo : tipo_in.clone(),
             duenio : duenio_in.clone()
         }
     }
@@ -291,6 +303,15 @@ impl Mascota {
 
 impl Atencion {
     //Metodos secundarios
+    pub fn get_mascota(&self)->Mascota{
+        return self.mascota.clone()
+    }
+    pub fn get_diagnostico(&self)->String{
+        return self.diagnostico.clone()
+    }
+    pub fn get_tratamiento(&self)->String{
+        return self.tratamiento.clone()
+    }
     pub fn es_igual_a(&self,ate:&Atencion)->bool{
         let mut cumple = false;
         if let Some(tiene_fecha) = &self.proxima_visita{
@@ -302,35 +323,44 @@ impl Atencion {
                 cumple = true;
             }
         }
-        return (self.mascota.es_igual_a(&ate.mascota))&&(self.diagnostico == ate.diagnostico.clone())&&(self.tratamiento == ate.tratamiento.clone())&&(cumple);
+        return (self.mascota.es_igual_a(&ate.get_mascota()))&&(self.diagnostico == ate.get_diagnostico())&&(self.tratamiento == ate.get_tratamiento())&&(cumple);
     }
-    pub fn cambiar_diagnostico(&mut self,diag:String){
+    pub fn cambiar_diagnostico(&mut self,diag:&String){
         self.diagnostico = diag.clone();
     }
     pub fn cambiar_fecha(&mut self,f:&Option<Fecha>){
         self.proxima_visita = f.clone();
     }
     //Metodos primarios
-    pub fn new(mascota_in: &Mascota,diagnostico_in: String,tratamiento_in: String,proxima_visita_in: Option<Fecha>) -> Atencion {
+    pub fn new(mascota_in: &Mascota,diagnostico_in: &String,tratamiento_in: &String,proxima_visita_in: &Option<Fecha>) -> Atencion {
         Atencion{
             mascota : mascota_in.clone(),
-            diagnostico : diagnostico_in,
-            tratamiento : tratamiento_in,
-            proxima_visita : proxima_visita_in
+            diagnostico : diagnostico_in.clone(),
+            tratamiento : tratamiento_in.clone(),
+            proxima_visita : proxima_visita_in.clone()
         }
     }
 }
 
 impl Veterinaria{
     //Metodos secundarios
+    pub fn get_nombre(&self)->String{
+        return self.nombre.clone()
+    }
+    pub fn get_direccion(&self)->String{
+        return self.direccion.clone()
+    }
+    pub fn get_id(&self)->u32{
+        return self.id
+    }
     pub fn es_igual_a(&self,v:&Veterinaria)->bool{
-        return (self.nombre == v.nombre)&&(self.direccion == v.direccion)&&(self.id == v.id);
+        return (self.nombre == v.get_nombre())&&(self.direccion == v.get_direccion())&&(self.id == v.get_id());
     }
     //Metodos primarios
-    pub fn new(nom_in:String,dir_in:String,id_in:u32)->Veterinaria{
+    pub fn new(nom_in:&String,dir_in:&String,id_in:u32)->Veterinaria{
         return Veterinaria{
-            nombre : nom_in,
-            direccion : dir_in,
+            nombre : nom_in.clone(),
+            direccion : dir_in.clone(),
             id : id_in,
             cola_atencion : Vec::new(),
             atenciones_realizadas : Vec::new()
@@ -362,7 +392,7 @@ impl Veterinaria{
     pub fn registrar_atencion(&mut self,a:&Atencion){
         self.atenciones_realizadas.push(a.clone());
     }
-    pub fn buscar_atencion(&self,nom_mascota:String,nom_duenio:String,tel:u32)->Option<Atencion>{
+    pub fn buscar_atencion(&self,nom_mascota:&String,nom_duenio:&String,tel:u32)->Option<Atencion>{
         let mut res : Option<Atencion> = None;
         if !self.atenciones_realizadas.is_empty(){
             for ate in self.atenciones_realizadas.clone(){
@@ -374,17 +404,17 @@ impl Veterinaria{
         }
         return res;
     }
-    pub fn modificar_diagnostico(&mut self,ate:&Atencion,diag:String){
+    pub fn modificar_diagnostico(&mut self,ate:&Atencion,diag:&String){
         if !self.atenciones_realizadas.is_empty(){
             for i in 0..self.atenciones_realizadas.len(){
                 if self.atenciones_realizadas[i].es_igual_a(&ate){
-                    self.atenciones_realizadas[i].cambiar_diagnostico(diag.clone());
+                    self.atenciones_realizadas[i].cambiar_diagnostico(&diag.clone());
                     break;
                 }
             }
         }
     }
-    pub fn modificar_fecha(&mut self,ate:&Atencion,fecha: Option<Fecha>) {
+    pub fn modificar_fecha(&mut self,ate:&Atencion,fecha: &Option<Fecha>) {
         if !self.atenciones_realizadas.is_empty(){
             for i in 0..self.atenciones_realizadas.len() {
                 if self.atenciones_realizadas[i].es_igual_a(&ate) {
@@ -411,20 +441,20 @@ mod testing_ejercicio9{
 
     #[test]
     fn creacion_veterinaria(){
-        let v = Veterinaria::new("mordidas".to_string(),"av1".to_string(),1);
-        let v2 = Veterinaria::new("mordidas".to_string(),"av1".to_string(),1);
+        let v = Veterinaria::new(&"mordidas".to_string(),&"av1".to_string(),1);
+        let v2 = Veterinaria::new(&"mordidas".to_string(),&"av1".to_string(),1);
         assert_eq!(v.es_igual_a(&v2),true);
     }
 
     #[test]
     fn operatoria_mascotas(){
-        let mut v = Veterinaria::new("mordidas".to_string(),"av1".to_string(),1);
-        let d1 = Duenio::new("Marcos".to_string(),"av2".to_string(),1234);
-        let animal1 = Mascota::new(String::from("Luchito"), 2, Animales::Perro, &d1);
+        let mut v = Veterinaria::new(&"mordidas".to_string(),&"av1".to_string(),1);
+        let d1 = Duenio::new(&"Marcos".to_string(),&"av2".to_string(),1234);
+        let animal1 = Mascota::new(&String::from("Luchito"), 2, &Animales::Perro, &d1);
         v.agregar_mascota(&animal1);
         v.agregar_mascota(&animal1);
 
-        let animal2 = Mascota::new(String::from("Piecitos"), 1, Animales::Gato, &d1);
+        let animal2 = Mascota::new(&String::from("Piecitos"), 1, &Animales::Gato, &d1);
         v.priorizar_mascota(&animal2);
 
         //Atendiende un gato
@@ -448,9 +478,9 @@ mod testing_ejercicio9{
 
     #[test]
     fn operar_atenciones(){
-        let mut v = Veterinaria::new("mordidas".to_string(),"av1".to_string(),1);
-        let d1 = Duenio::new("Marcos".to_string(),"av2".to_string(),1234);
-        let animal1 = Mascota::new(String::from("Luchito"), 2, Animales::Perro, &d1);
+        let mut v = Veterinaria::new(&"mordidas".to_string(),&"av1".to_string(),1);
+        let d1 = Duenio::new(&"Marcos".to_string(),&"av2".to_string(),1234);
+        let animal1 = Mascota::new(&String::from("Luchito"), 2, &Animales::Perro, &d1);
         v.agregar_mascota(&animal1);
         v.agregar_mascota(&animal1);
 
@@ -458,7 +488,7 @@ mod testing_ejercicio9{
         let mut ate2 : Atencion;
         //Primera recepcion
         if let Some(ani) = v.atender_mascota(){
-            ate1 = Atencion::new(&ani,"Pulgas".to_string(),"Pipeta".to_string(),None);
+            ate1 = Atencion::new(&ani,&"Pulgas".to_string(),&"Pipeta".to_string(),&None);
             v.registrar_atencion(&ate1);
         }else{
             panic!("No se atendio a ningun animal");
@@ -466,14 +496,14 @@ mod testing_ejercicio9{
 
         //Segunda recepcion
         if let Some(ani) = v.atender_mascota(){
-            ate2 = Atencion::new(&ani,"Garrapatas".to_string(),"Pipeta".to_string(),Some(Fecha::new(5,5,2025)));
+            ate2 = Atencion::new(&ani,&"Garrapatas".to_string(),&"Pipeta".to_string(),&Some(Fecha::new(5,5,2025)));
             v.registrar_atencion(&ate2);
         }else{
             panic!("No se atendio a ningun animal");
         }
         
         //Busqueda y eliminacion de la primera atencion
-        if let Some(ate_actual) = v.buscar_atencion("Luchito".to_string(),"Marcos".to_string(),1234){
+        if let Some(ate_actual) = v.buscar_atencion(&"Luchito".to_string(),&"Marcos".to_string(),1234){
             assert_eq!(ate_actual.es_igual_a(&ate1),true);
             v.eliminar_atencion(&ate1);
         }else{
@@ -481,27 +511,27 @@ mod testing_ejercicio9{
         }
     
         //Busqueda de atencion
-        if let Some(ate_actual) = v.buscar_atencion("Luchito".to_string(),"Marcos".to_string(),1234){
+        if let Some(ate_actual) = v.buscar_atencion(&"Luchito".to_string(),&"Marcos".to_string(),1234){
             assert_eq!(ate_actual.es_igual_a(&ate1),false);
         }else{
             panic!("No se encontro tal recepcion");
         }
 
         //Modificar la atencion actual(segunda recepcion)
-        v.modificar_diagnostico(&ate2,"Vomitos".to_string());
+        v.modificar_diagnostico(&ate2,&"Vomitos".to_string());
 
         //Busqueda de atencion y modificacion de fecha
-        if let Some(ate_actual) = v.buscar_atencion("Luchito".to_string(),"Marcos".to_string(),1234){
-            let ate3 = Atencion::new(&animal1,"Vomitos".to_string(),"Pipeta".to_string(),Some(Fecha::new(5,5,2025)));
+        if let Some(ate_actual) = v.buscar_atencion(&"Luchito".to_string(),&"Marcos".to_string(),1234){
+            let ate3 = Atencion::new(&animal1,&"Vomitos".to_string(),&"Pipeta".to_string(),&Some(Fecha::new(5,5,2025)));
             assert_eq!(ate_actual.es_igual_a(&ate3),true);
-            v.modificar_fecha(&ate_actual,None);
+            v.modificar_fecha(&ate_actual,&None);
         }else{
             panic!("No se encontro tal recepcion");
         }
 
         //Busqueda de atencion modificada 
-        if let Some(ate_actual) = v.buscar_atencion("Luchito".to_string(),"Marcos".to_string(),1234){
-            let ate3 = Atencion::new(&animal1,"Vomitos".to_string(),"Pipeta".to_string(),None );
+        if let Some(ate_actual) = v.buscar_atencion(&"Luchito".to_string(),&"Marcos".to_string(),1234){
+            let ate3 = Atencion::new(&animal1,&"Vomitos".to_string(),&"Pipeta".to_string(),&None );
             assert_eq!(ate_actual.es_igual_a(&ate3),true);
         }else{
             panic!("No se encontro tal recepcion");

@@ -2,7 +2,7 @@
     Estructuras : Cancion , Generos y PlayList
 */
 #[derive(Debug,Clone)]
-pub enum Generos{
+enum Generos{
     Rock,
     Pop,
     Rap,
@@ -10,13 +10,13 @@ pub enum Generos{
     Otros
 }
 #[derive(Debug,Clone)]
-pub struct Cancion{
+struct Cancion{
     titulo : String,
     artista : String,
     genero : Generos
 }
 #[derive(Debug)]
-pub struct PlayList{
+struct PlayList{
     nombre: String,
     canciones : Vec<Cancion>
 }
@@ -46,16 +46,19 @@ impl Cancion{
     pub fn get_artista(&self)->String{
         return self.artista.clone();
     }
+    pub fn get_genero(&self)->Generos{
+        return self.genero.clone()
+    }
     pub fn es_igual_a(&self,c:&Cancion)->bool{
         return (self.titulo == c.get_titulo())&&(self.artista == c.get_artista())&&
-        (self.genero.es_igual_a(&c.genero));
+        (self.genero.es_igual_a(&c.get_genero()));
     }
     //Metodos primarios
-    pub fn new(nom1:String,nom2:String,gen_in:Generos)->Cancion{
+    pub fn new(nom1:&String,nom2:&String,gen_in:&Generos)->Cancion{
         return Cancion{
-            titulo : nom1,
-            artista : nom2,
-            genero : gen_in
+            titulo : nom1.clone(),
+            artista : nom2.clone(),
+            genero : gen_in.clone()
         }
     }    
 }
@@ -96,11 +99,11 @@ impl PlayList{
             }
         }
     }
-    pub fn buscar_cancion(&self,nom:String)->Option<Cancion>{
+    pub fn buscar_cancion(&self,nom:&String)->Option<Cancion>{
 		let mut res : Option<Cancion> = None;
 		if !self.canciones.is_empty() {
 			for cancion in self.canciones.clone(){
-				if cancion.get_titulo() == nom {
+				if cancion.get_titulo() == *nom {
 					res = Some(cancion);
                     break;
 				}
@@ -120,11 +123,11 @@ impl PlayList{
         }
         return res;
     }
-    pub fn canciones_artista(&self,nom:String)->Vec<Cancion>{
+    pub fn canciones_artista(&self,nom:&String)->Vec<Cancion>{
         let mut res : Vec<Cancion> = Vec::new();
         if !self.canciones.is_empty() {
             for cancion in self.canciones.clone(){
-                if cancion.get_artista() == nom {
+                if cancion.get_artista() == *nom {
                     res.push(cancion);
                     break;
                 }
@@ -157,16 +160,16 @@ mod testing_ejercicio8{
     #[test]
     fn operatoria_canciones(){
         let mut p = PlayList::new(&"asd".to_string());
-        let c = Cancion::new(String::from("pepe"), String::from("pepito"), Generos::Rap);
+        let c = Cancion::new(&String::from("pepe"), &String::from("pepito"), &Generos::Rap);
         p.agregar_cancion(&c);
         p.agregar_cancion(&c);
-        if let Some(aux) = p.buscar_cancion("pepe".to_string()){
+        if let Some(aux) = p.buscar_cancion(&"pepe".to_string()){
             assert_eq!(aux.es_igual_a(&c),true);
         }else{
             panic!("No existe esa cancion");
         }
 
-        let c2 = Cancion::new(String::from("pepo"), String::from("pepe"), Generos::Rap);
+        let c2 = Cancion::new(&String::from("pepo"), &String::from("pepe"), &Generos::Rap);
         p.agregar_cancion(&c2);
         p.mover_cancion(&c2,0);
         if let Some(aux) = p.canciones.get(0){
@@ -181,9 +184,9 @@ mod testing_ejercicio8{
     #[test]
     fn listado_canciones(){
         let mut p = PlayList::new(&"asd".to_string());
-        let c1 = Cancion::new(String::from("pepe"), String::from("pepito"), Generos::Rap);
-        let c2 = Cancion::new(String::from("donPepe"), String::from("donPepito"), Generos::Rap);
-        let c3 = Cancion::new(String::from("qwe"), String::from("Qwe"), Generos::Rock);
+        let c1 = Cancion::new(&String::from("pepe"), &String::from("pepito"), &Generos::Rap);
+        let c2 = Cancion::new(&String::from("donPepe"), &String::from("donPepito"), &Generos::Rap);
+        let c3 = Cancion::new(&String::from("qwe"), &String::from("Qwe"), &Generos::Rock);
         p.agregar_cancion(&c1);
         p.agregar_cancion(&c2);
         p.agregar_cancion(&c1);
@@ -201,7 +204,7 @@ mod testing_ejercicio8{
             panic!("Lista 1 no generada");
         }
 
-        let lista2 = p.canciones_artista("pepito".to_string());
+        let lista2 = p.canciones_artista(&"pepito".to_string());
 
         if !lista2.is_empty(){
             for cancion in lista2{
