@@ -417,8 +417,24 @@ impl Biblioteca {
         return cantidad;
     }
     
+    //Auxiliar de exitencia de prestamo del mismo libro solicitado , para un cliente 
+    fn tiene_prestamo_del_libro(&self,cliente:&Cliente,libro:&Libro)->bool{
+        let mut existe = false;
+        for prestamo in &self.prestamos{
+            if (prestamo.cliente.es_igual_a(&cliente)) && (prestamo.estado.es_igual_a(&Estado::EnPrestamo)) && (prestamo.libro.es_igual_a(&libro)){
+                existe = true;
+                break;
+            }
+        }
+        
+        return existe
+    }
+
+    /*
+        Revisar
+     */
     pub fn prestar(&mut self,cliente:Cliente,libro:&Libro,vencimiento:Fecha) -> bool {
-        if (self.copias(&libro)>0) && (self.prestamos(&cliente)<5) {
+        if (self.copias(&libro)>0) && (self.prestamos(&cliente)<5) && (self.tiene_prestamo_del_libro(&cliente, &libro)) {
             self.prestamos.push(Prestamo::new(&libro.clone(), &cliente, &vencimiento));
             self.decrementar(&libro.clone());
             return true
@@ -441,16 +457,28 @@ impl Biblioteca {
         return prestamos
     }
 
-    //Reutiliza el metodo de arriba
+    
     pub fn prestamos_vencidos(&self,f:&Fecha) -> Vec<Prestamo> {
-        return self.vencimientos_proximos(&f,0);
+        let mut fecha_actual = f.clone();
+        let mut prestamos: Vec<Prestamo> = Vec::new();
+        for prestamo in &self.prestamos {
+            if (fecha_actual.es_mayor(&prestamo.vencimiento)) && (prestamo.estado.es_igual_a(&Estado::EnPrestamo)) {
+                prestamos.push(prestamo.clone());
+            }
+        }
+
+        return prestamos
     }
 
+    //La busqueda debe retornar el prestamo "mas reciente" , por ello
+    //se recorre a la inversa nuestro registro de prestamos y solo retornar el ultimo registrado del cliente
     fn buscar(&self,libro:&Libro,cliente:&Cliente) -> Option<Prestamo> {
         let mut res = None;
-        for prestamo in &self.prestamos {
+        let mut prestamos = self.prestamos.clone();
+        prestamos.reverse();
+        for prestamo in prestamos {
             if prestamo.es_igual(&libro, &cliente){
-                res = Some(prestamo.clone());
+                res = Some(prestamo);
                 break;
             }
             
@@ -539,11 +567,12 @@ mod testing_ejercicio10 {
         biblioteca.prestar(cliente4.clone(), &libro2, nunca.clone());
         biblioteca.prestar(cliente4.clone(), &libro3, ayer.clone());
         biblioteca.prestar(cliente4.clone(), &libro4, ayer.clone());
+        biblioteca.prestar(cliente4.clone(), &libro1, Fecha::new(15, 5, 2025)); //Misma fecha que actual
         assert_eq!(biblioteca.prestamos(&cliente1),1);
-        assert_eq!(biblioteca.prestamos(&cliente4),4);
+        assert_eq!(biblioteca.prestamos(&cliente4),5);
 
         //Copias prestadas en total de "libro1"
-        assert_eq!(biblioteca.copias(&libro1),3); 
+        assert_eq!(biblioteca.copias(&libro1),2); 
 
         //Fecha a operar
         let act = Fecha::new(15, 5, 2025);
@@ -554,15 +583,15 @@ mod testing_ejercicio10 {
             panic!("No se registro el prestamo");
         }
 
-        //Contabiliza los prestamos de ayer y de 15 dias(definido arriba)
-        assert_eq!(biblioteca.vencimientos_proximos(&act,20).len(),4);
+        //Contabiliza los prestamos de ayer ,la misma fecha actual, y las de 15 dias(definido arriba)
+        assert_eq!(biblioteca.vencimientos_proximos(&act,20).len(),5);
         
         //Contabiliza los prestamos de ayer
         assert_eq!(biblioteca.prestamos_vencidos(&act).len(),2);
 
         //Contabiliza las copias de "libro1"
         biblioteca.devolver(&act,&libro1, &cliente1);
-        assert_eq!(biblioteca.disponibles[0].cantidad,4);
+        assert_eq!(biblioteca.disponibles[0].cantidad,3);
         
         let prestamo = biblioteca.prestamos[0].clone();
         assert_eq!(prestamo.estado.es_igual_a(&Estado::Devuelto), true);
