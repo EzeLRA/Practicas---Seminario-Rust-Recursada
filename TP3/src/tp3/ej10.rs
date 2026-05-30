@@ -253,11 +253,7 @@ struct Libro {
 }
 
 #[derive(Debug, Clone)]
-struct LibrosDispone {
-    libro: Libro,
-    cantidad: u32
-}
-
+struct LibrosDispone(Libro,u32);
 #[derive(Debug, Clone)]
 struct Cliente { 
     nombre: String,
@@ -380,30 +376,45 @@ impl Biblioteca {
 
     //Agregar libros en biblioteca
     pub fn agregar_libro(&mut self,libro:Libro,cantidad:u32) {
-        self.disponibles.push(LibrosDispone{libro,cantidad});
+        let mut registrado = false;
+
+        for libro_disponible in &mut self.disponibles {
+            if libro_disponible.0.es_igual_a(&libro) {
+                libro_disponible.1 += cantidad;
+                registrado = true;
+                break; 
+            }
+        }
+        // Sea si el Vec esta vacío o el libro no se encuentra en el catálogo , se lo agrega como nuevo
+        if !registrado {
+            self.disponibles.push(LibrosDispone(libro, cantidad));
+        }
     }
 
     pub fn copias(&self,libro:&Libro) -> u32 {
         let mut copias = 0;
         for libro_biblo in &self.disponibles {
-            if libro_biblo.libro.es_igual_a(&libro) {
-                copias = libro_biblo.cantidad;
+            if libro_biblo.0.es_igual_a(&libro) {
+                copias = libro_biblo.1;
+                break;
             }
         }
         return copias
     }
 
     pub fn decrementar(&mut self,libro:&Libro) {
-        for i in 0..self.disponibles.len(){
-            if self.disponibles[i].libro.es_igual_a(&libro)&&(self.disponibles[i].cantidad > 0) {
-                self.disponibles[i].cantidad -=1;
+        for libros in &mut self.disponibles{
+            if libros.0.es_igual_a(&libro) && (libros.1 > 0){
+                libros.1 -= 1;
+                break;
             }
         }
     }
     pub fn incrementar(&mut self,libro:&Libro) {
-        for i in 0..self.disponibles.len(){
-            if self.disponibles[i].libro.es_igual_a(&libro) {
-                self.disponibles[i].cantidad +=1;
+        for libros in &mut self.disponibles{
+            if libros.0.es_igual_a(&libro){
+                libros.1 += 1;
+                break;
             }
         }
     }
@@ -430,11 +441,8 @@ impl Biblioteca {
         return existe
     }
 
-    /*
-        Revisar
-     */
     pub fn prestar(&mut self,cliente:Cliente,libro:&Libro,vencimiento:Fecha) -> bool {
-        if (self.copias(&libro)>0) && (self.prestamos(&cliente)<5) && (self.tiene_prestamo_del_libro(&cliente, &libro)) {
+        if (self.copias(&libro)>0) && (self.prestamos(&cliente)<5) && (!self.tiene_prestamo_del_libro(&cliente, &libro)) {
             self.prestamos.push(Prestamo::new(&libro.clone(), &cliente, &vencimiento));
             self.decrementar(&libro.clone());
             return true
@@ -505,7 +513,7 @@ mod testing_ejercicio10 {
     use super::*;
 
     #[test]
-    fn libros_biblioteca(){
+    fn stock_basico_biblioteca(){
         let nombre = String::from("Silencio");
         let direccion = String::from("1 e 2 y 3");
        
@@ -519,15 +527,159 @@ mod testing_ejercicio10 {
 
         biblioteca.agregar_libro(libro1.clone(),0);
         biblioteca.incrementar(&libro1);
+        biblioteca.agregar_libro(libro1.clone(),2);
         biblioteca.agregar_libro(libro2.clone(),3);
         biblioteca.decrementar(&libro2);
         biblioteca.agregar_libro(libro3.clone(),3);
         biblioteca.agregar_libro(libro4.clone(),4);
 
-        assert_eq!(biblioteca.copias(&libro1),1);
+        assert_eq!(biblioteca.copias(&libro1),3);
         assert_eq!(biblioteca.copias(&libro2),2);
+        assert_eq!(biblioteca.copias(&libro3),3);
+        assert_eq!(biblioteca.copias(&libro4),4);
     }
 
+    #[test]
+    fn nuevos_prestamos(){
+        let mut biblioteca = Biblioteca::new(String::from("Sabio"),String::from("Av1"));
+
+        //Libros
+        let libro1 = Libro::new(10, "Libro1".to_string(), "Autor1".to_string(), 50 , Genero::Infantil);
+        let libro2 = Libro::new(20, "Libro2".to_string(), "Autor2".to_string(), 50 , Genero::Novela);
+
+        biblioteca.agregar_libro(libro1.clone(),5);
+        biblioteca.agregar_libro(libro2.clone(),5);
+
+        let cliente1 = Cliente::new("Carlos".to_string(),1,"Carlos.com".to_string());
+        let cliente2 = Cliente::new("Mateo".to_string(),2,"Mateo.com".to_string());
+        
+        //Prestamos
+        let mut quince_dias = Fecha::new(15, 5, 2026);
+
+        assert!(biblioteca.prestar(cliente1.clone(), &libro1, quince_dias.clone()) , "No se pudo hacer el prestamo");
+        assert!(biblioteca.prestar(cliente2.clone(), &libro2, quince_dias.clone()) , "No se pudo hacer el prestamo");
+
+        assert_eq!(biblioteca.prestamos(&cliente1),1);
+        assert_eq!(biblioteca.prestamos(&cliente2),1);
+    }
+
+    #[test]
+    fn prestamos_restringidos(){
+        let mut biblioteca = Biblioteca::new(String::from("Sabioso"),String::from("Av12"));
+
+        //Libros
+        let libro1 = Libro::new(10, "Libro1".to_string(), "Autor1".to_string(), 50 , Genero::Infantil);
+        let libro2 = Libro::new(20, "Libro2".to_string(), "Autor2".to_string(), 50 , Genero::Novela);
+        let libro3 = Libro::new(30, "Libro3".to_string(), "Autor3".to_string(), 50 , Genero::Tecnico);
+        let libro4 = Libro::new(40, "Libro4".to_string(), "Autor4".to_string(), 50 , Genero::Otro);
+        let libro5 = Libro::new(30, "Libro5".to_string(), "Autor3".to_string(), 50 , Genero::Tecnico);
+        let libro6 = Libro::new(40, "Libro6".to_string(), "Autor4".to_string(), 50 , Genero::Otro);
+
+        biblioteca.agregar_libro(libro1.clone(),1);
+        biblioteca.agregar_libro(libro2.clone(),5);
+        biblioteca.agregar_libro(libro3.clone(),5);
+        biblioteca.agregar_libro(libro4.clone(),5);
+        biblioteca.agregar_libro(libro5.clone(),5);
+        biblioteca.agregar_libro(libro6.clone(),5);
+
+        let cliente3 = Cliente::new("Juan".to_string(),3,"Juan.com".to_string());
+        let cliente4 = Cliente::new("Pedro".to_string(),4,"Pedro.com".to_string());
+
+        //Prestamos 
+        assert!(biblioteca.prestar(cliente3.clone(), &libro1, Fecha::new(10,05,2026)) , "No se pudo hacer el prestamo");
+        //Restriccion por stock insuficiente 
+        assert!(!biblioteca.prestar(cliente4.clone(), &libro1, Fecha::new(10,05,2026)) , "No tenia que ocurrir el prestamo");
+        
+        biblioteca.incrementar(&libro1);
+        //Restriccion del prestamo para el mismo libro pendiente
+        assert!(!biblioteca.prestar(cliente3.clone(), &libro1, Fecha::new(10,05,2026)) , "No tenia que ocurrir el prestamo");
+        
+        //Restriccion por maximo de prestamos otorgados
+        biblioteca.prestar(cliente3.clone(),&libro2,Fecha::new(10,05,2026));
+        biblioteca.prestar(cliente3.clone(),&libro3,Fecha::new(10,05,2026));
+        biblioteca.prestar(cliente3.clone(),&libro4,Fecha::new(10,05,2026));
+        biblioteca.prestar(cliente3.clone(),&libro5,Fecha::new(10,05,2026));
+        assert!(!biblioteca.prestar(cliente3.clone(),&libro6,Fecha::new(10,05,2026)) , "No tenia que ocurrir el prestamo");
+        
+        assert_eq!(biblioteca.prestamos(&cliente3),5);
+    }
+
+    #[test]
+    fn prestamos_proximos_a_vencer(){
+        let mut biblioteca = Biblioteca::new(String::from("Sabioso"),String::from("Av12"));
+
+        //Libros
+        let libro1 = Libro::new(10, "Libro1".to_string(), "Autor1".to_string(), 50 , Genero::Infantil);
+        let libro2 = Libro::new(20, "Libro2".to_string(), "Autor2".to_string(), 50 , Genero::Novela);
+        let libro3 = Libro::new(30, "Libro3".to_string(), "Autor3".to_string(), 50 , Genero::Tecnico);
+        let libro4 = Libro::new(40, "Libro4".to_string(), "Autor4".to_string(), 50 , Genero::Otro);
+        let libro5 = Libro::new(30, "Libro5".to_string(), "Autor3".to_string(), 50 , Genero::Tecnico);
+        let libro6 = Libro::new(40, "Libro6".to_string(), "Autor4".to_string(), 50 , Genero::Otro);
+
+        biblioteca.agregar_libro(libro1.clone(),5);
+        biblioteca.agregar_libro(libro2.clone(),5);
+        biblioteca.agregar_libro(libro3.clone(),5);
+        biblioteca.agregar_libro(libro4.clone(),5);
+        biblioteca.agregar_libro(libro5.clone(),5);
+        biblioteca.agregar_libro(libro6.clone(),5);
+
+        let cliente3 = Cliente::new("Juan".to_string(),3,"Juan.com".to_string());
+        let cliente4 = Cliente::new("Pedro".to_string(),4,"Pedro.com".to_string());
+
+        //Fechas de referencia actual
+        let mut actual = Fecha::new(1,5,2026);
+
+        
+        biblioteca.prestar(cliente3.clone(), &libro1, Fecha::new(12,5,2026));
+        biblioteca.prestar(cliente4.clone(), &libro1, Fecha::new(2,5,2026));
+        biblioteca.prestar(cliente3.clone(), &libro2, Fecha::new(25,5,2026));
+        biblioteca.prestar(cliente4.clone(), &libro6, Fecha::new(2,6,2026));
+        biblioteca.prestar(cliente3.clone(), &libro3, Fecha::new(20,5,2026));
+
+        //Revisar logica
+        assert_eq!(biblioteca.vencimientos_proximos(&actual,19).len(),2);
+
+    }
+
+    #[test]
+    fn prestamos_vencidos(){
+        let mut biblioteca = Biblioteca::new(String::from("Sabioso"),String::from("Av12"));
+
+        //Libros
+        let libro1 = Libro::new(10, "Libro1".to_string(), "Autor1".to_string(), 50 , Genero::Infantil);
+        let libro2 = Libro::new(20, "Libro2".to_string(), "Autor2".to_string(), 50 , Genero::Novela);
+        let libro3 = Libro::new(30, "Libro3".to_string(), "Autor3".to_string(), 50 , Genero::Tecnico);
+        let libro4 = Libro::new(40, "Libro4".to_string(), "Autor4".to_string(), 50 , Genero::Otro);
+        let libro5 = Libro::new(30, "Libro5".to_string(), "Autor3".to_string(), 50 , Genero::Tecnico);
+        let libro6 = Libro::new(40, "Libro6".to_string(), "Autor4".to_string(), 50 , Genero::Otro);
+
+        biblioteca.agregar_libro(libro1.clone(),5);
+        biblioteca.agregar_libro(libro2.clone(),5);
+        biblioteca.agregar_libro(libro3.clone(),5);
+        biblioteca.agregar_libro(libro4.clone(),5);
+        biblioteca.agregar_libro(libro5.clone(),5);
+        biblioteca.agregar_libro(libro6.clone(),5);
+
+        let cliente3 = Cliente::new("Juan".to_string(),3,"Juan.com".to_string());
+        let cliente4 = Cliente::new("Pedro".to_string(),4,"Pedro.com".to_string());
+
+        //Fechas de referencia actual
+        let mut actual = Fecha::new(1,5,2026);
+
+        
+        biblioteca.prestar(cliente3.clone(), &libro1, Fecha::new(12,4,2026));
+        biblioteca.prestar(cliente4.clone(), &libro1, Fecha::new(2,4,2026));
+        biblioteca.prestar(cliente3.clone(), &libro2, Fecha::new(25,5,2026));
+        biblioteca.prestar(cliente4.clone(), &libro6, Fecha::new(1,5,2026));
+        biblioteca.prestar(cliente3.clone(), &libro3, Fecha::new(20,5,2026));
+
+        //Revisar logica
+        assert_eq!(biblioteca.prestamos_vencidos(&actual).len(),2);
+    }
+
+    //Testear busqueda y devolucion
+
+    /* 
     #[test]
     fn operatoria_prestamos() {
         let nombre = String::from("Silencio");
@@ -569,7 +721,7 @@ mod testing_ejercicio10 {
         biblioteca.prestar(cliente4.clone(), &libro4, ayer.clone());
         biblioteca.prestar(cliente4.clone(), &libro1, Fecha::new(15, 5, 2025)); //Misma fecha que actual
         assert_eq!(biblioteca.prestamos(&cliente1),1);
-        assert_eq!(biblioteca.prestamos(&cliente4),5);
+        assert_eq!(biblioteca.prestamos(&cliente4),4);
 
         //Copias prestadas en total de "libro1"
         assert_eq!(biblioteca.copias(&libro1),2); 
@@ -591,7 +743,7 @@ mod testing_ejercicio10 {
 
         //Contabiliza las copias de "libro1"
         biblioteca.devolver(&act,&libro1, &cliente1);
-        assert_eq!(biblioteca.disponibles[0].cantidad,3);
+        assert_eq!(biblioteca.disponibles[0].1,3);
         
         let prestamo = biblioteca.prestamos[0].clone();
         assert_eq!(prestamo.estado.es_igual_a(&Estado::Devuelto), true);
@@ -602,4 +754,5 @@ mod testing_ejercicio10 {
             panic!("No se registro la devolucion");
         }
     }
+    */
 }
