@@ -715,7 +715,7 @@ mod testing_ejercicio10 {
         let cliente4 = Cliente::new("Pedro".to_string(),4,"Pedro.com".to_string());
 
         //Fechas de referencia
-        let mut actual = Fecha::new(1,5,2026);
+        //let actual = Fecha::new(1,5,2026);
 
         biblioteca.prestar(cliente3.clone(), &libro1, Fecha::new(12,5,2026));
         biblioteca.prestar(cliente4.clone(), &libro1, Fecha::new(1,5,2026));

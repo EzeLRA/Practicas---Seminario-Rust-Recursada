@@ -2,6 +2,8 @@
     Estructura Fecha - Ejercicio3
 */
 
+use std::collections::VecDeque;
+
 //Atributos
 #[derive(Debug,Clone)]
 struct Fecha{
@@ -230,7 +232,7 @@ struct Veterinaria {
     nombre: String,
     direccion: String,
     id: u32,
-    cola_atencion: Vec<Mascota>,
+    cola_atencion: VecDeque<Mascota>,
     atenciones_realizadas: Vec<Atencion>
 }
 
@@ -362,21 +364,21 @@ impl Veterinaria{
             nombre : nom_in.clone(),
             direccion : dir_in.clone(),
             id : id_in,
-            cola_atencion : Vec::new(),
+            cola_atencion : VecDeque::new(),
             atenciones_realizadas : Vec::new()
         }
     }
     pub fn agregar_mascota(&mut self,m:&Mascota){
-        self.cola_atencion.push(m.clone());
+        self.cola_atencion.push_back(m.clone());
     }   
     pub fn priorizar_mascota(&mut self,m:&Mascota){
-        self.cola_atencion.insert(0,m.clone());
+        self.cola_atencion.push_front(m.clone());
     }
     pub fn atender_mascota(&mut self)->Option<Mascota>{
         if self.cola_atencion.is_empty() {
             return None;
         }else{
-            return Some(self.cola_atencion.remove(0));
+            return self.cola_atencion.pop_front();
         }
     }
     pub fn eliminar_mascota(&mut self, m:&Mascota){
