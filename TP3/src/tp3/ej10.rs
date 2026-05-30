@@ -452,12 +452,15 @@ impl Biblioteca {
     }
     
     //Parametro auxiliar de fecha para el calculo de proximidad
-    pub fn vencimientos_proximos(&self,f:&Fecha,dias:u32) -> Vec<Prestamo> {
-        let mut fecha = f.clone();
-        fecha.sumar_dias(dias);
+    //Se filtran solo los que esten dentro del lapso inicial hasta al limite indicado en los dias 
+    pub fn vencimientos_proximos(&self,fecha_act:&Fecha,dias:u32) -> Vec<Prestamo> {
+        let mut fecha_lim = fecha_act.clone();
+        fecha_lim.sumar_dias(dias);
         let mut prestamos: Vec<Prestamo> = Vec::new();
         for prestamo in &self.prestamos {
-            if (fecha.es_mayor(&prestamo.vencimiento)) && (prestamo.estado.es_igual_a(&Estado::EnPrestamo)) {
+            if (prestamo.estado.es_igual_a(&Estado::EnPrestamo))&&
+            (!fecha_act.es_mayor(&prestamo.vencimiento))&&
+            (!prestamo.vencimiento.es_mayor(&fecha_lim)) {
                 prestamos.push(prestamo.clone());
             }
         }
@@ -465,12 +468,12 @@ impl Biblioteca {
         return prestamos
     }
 
-    
+    //Solo apunta como vencidos a los prestamos = (vencimiento < actual) equivalente (actual > vencimiento) 
     pub fn prestamos_vencidos(&self,f:&Fecha) -> Vec<Prestamo> {
         let mut fecha_actual = f.clone();
         let mut prestamos: Vec<Prestamo> = Vec::new();
         for prestamo in &self.prestamos {
-            if (fecha_actual.es_mayor(&prestamo.vencimiento)) && (prestamo.estado.es_igual_a(&Estado::EnPrestamo)) {
+            if (prestamo.estado.es_igual_a(&Estado::EnPrestamo))&&(fecha_actual.es_mayor(&prestamo.vencimiento)) {
                 prestamos.push(prestamo.clone());
             }
         }
@@ -494,14 +497,14 @@ impl Biblioteca {
         return res
     }
 
-    fn devolver(&mut self,f:&Fecha,libro:&Libro,cliente:&Cliente) {
+    fn devolver(&mut self,fecha_devolucion:&Fecha,libro:&Libro,cliente:&Cliente) {
         let mut pude = false;
         for prestamo in &mut self.prestamos {
-            if prestamo.es_igual(&libro, &cliente) {
+            if prestamo.es_igual(&libro, &cliente) && prestamo.estado.es_igual_a(&Estado::EnPrestamo) {
                 prestamo.estado = Estado::Devuelto;
-                //Se utiliza una fecha definida para la prueba
-                prestamo.devolucion = Some(f.clone());
+                prestamo.devolucion = Some(fecha_devolucion.clone());
                 pude = true;
+                break;
             }
         }
         if pude {self.incrementar(&libro.clone());}
@@ -629,15 +632,21 @@ mod testing_ejercicio10 {
         //Fechas de referencia actual
         let mut actual = Fecha::new(1,5,2026);
 
-        
+        //Lapso que evalua (1/5/26 <= vencimiento <= 20/05/26)
         biblioteca.prestar(cliente3.clone(), &libro1, Fecha::new(12,5,2026));
-        biblioteca.prestar(cliente4.clone(), &libro1, Fecha::new(2,5,2026));
+        biblioteca.prestar(cliente4.clone(), &libro1, Fecha::new(1,5,2026));
         biblioteca.prestar(cliente3.clone(), &libro2, Fecha::new(25,5,2026));
         biblioteca.prestar(cliente4.clone(), &libro6, Fecha::new(2,6,2026));
         biblioteca.prestar(cliente3.clone(), &libro3, Fecha::new(20,5,2026));
 
-        //Revisar logica
-        assert_eq!(biblioteca.vencimientos_proximos(&actual,19).len(),2);
+        assert_eq!(biblioteca.vencimientos_proximos(&actual,19).len(),3);
+
+        biblioteca.devolver(&Fecha::new(1,5,2026),&libro1,&cliente3);
+        biblioteca.devolver(&Fecha::new(1,5,2026),&libro1,&cliente3);
+        biblioteca.devolver(&Fecha::new(1,5,2026),&libro1,&cliente4);
+        biblioteca.devolver(&Fecha::new(1,5,2026),&libro6,&cliente4);
+
+        assert_eq!(biblioteca.vencimientos_proximos(&actual,19).len(),1);
 
     }
 
@@ -666,19 +675,82 @@ mod testing_ejercicio10 {
         //Fechas de referencia actual
         let mut actual = Fecha::new(1,5,2026);
 
-        
+        //Lapso que evalua (vencimiento < 1/5/26)
         biblioteca.prestar(cliente3.clone(), &libro1, Fecha::new(12,4,2026));
         biblioteca.prestar(cliente4.clone(), &libro1, Fecha::new(2,4,2026));
         biblioteca.prestar(cliente3.clone(), &libro2, Fecha::new(25,5,2026));
         biblioteca.prestar(cliente4.clone(), &libro6, Fecha::new(1,5,2026));
         biblioteca.prestar(cliente3.clone(), &libro3, Fecha::new(20,5,2026));
 
-        //Revisar logica
         assert_eq!(biblioteca.prestamos_vencidos(&actual).len(),2);
+
+        biblioteca.devolver(&Fecha::new(1,5,2026), &libro1, &cliente3);
+        biblioteca.devolver(&Fecha::new(1,5,2026), &libro6, &cliente4);
+
+        assert_eq!(biblioteca.prestamos_vencidos(&actual).len(),1);
+
     }
 
-    //Testear busqueda y devolucion
+    #[test]
+    fn busqueda_de_prestamos(){
+        let mut biblioteca = Biblioteca::new(String::from("Sabioso"),String::from("Av12"));
 
+        //Libros
+        let libro1 = Libro::new(10, "Libro1".to_string(), "Autor1".to_string(), 50 , Genero::Infantil);
+        let libro2 = Libro::new(20, "Libro2".to_string(), "Autor2".to_string(), 50 , Genero::Novela);
+        let libro3 = Libro::new(30, "Libro3".to_string(), "Autor3".to_string(), 50 , Genero::Tecnico);
+        let libro4 = Libro::new(40, "Libro4".to_string(), "Autor4".to_string(), 50 , Genero::Otro);
+        let libro5 = Libro::new(30, "Libro5".to_string(), "Autor3".to_string(), 50 , Genero::Tecnico);
+        let libro6 = Libro::new(40, "Libro6".to_string(), "Autor4".to_string(), 50 , Genero::Otro);
+
+        biblioteca.agregar_libro(libro1.clone(),5);
+        biblioteca.agregar_libro(libro2.clone(),5);
+        biblioteca.agregar_libro(libro3.clone(),5);
+        biblioteca.agregar_libro(libro4.clone(),5);
+        biblioteca.agregar_libro(libro5.clone(),5);
+        biblioteca.agregar_libro(libro6.clone(),5);
+
+        let cliente2 = Cliente::new("Juanito".to_string(),2,"Juanito.com".to_string());
+        let cliente3 = Cliente::new("Juan".to_string(),3,"Juan.com".to_string());
+        let cliente4 = Cliente::new("Pedro".to_string(),4,"Pedro.com".to_string());
+
+        //Fechas de referencia
+        let mut actual = Fecha::new(1,5,2026);
+
+        biblioteca.prestar(cliente3.clone(), &libro1, Fecha::new(12,5,2026));
+        biblioteca.prestar(cliente4.clone(), &libro1, Fecha::new(1,5,2026));
+        biblioteca.prestar(cliente3.clone(), &libro2, Fecha::new(25,5,2026));
+        biblioteca.prestar(cliente4.clone(), &libro6, Fecha::new(2,6,2026));
+        biblioteca.prestar(cliente3.clone(), &libro3, Fecha::new(20,5,2026));
+        biblioteca.prestar(cliente2.clone(), &libro4, Fecha::new(20,5,2026));
+        biblioteca.prestar(cliente2.clone(), &libro6, Fecha::new(20,5,2026));
+
+        biblioteca.devolver(&Fecha::new(1,5,2026),&libro1,&cliente3);
+        biblioteca.devolver(&Fecha::new(1,5,2026),&libro1,&cliente3);
+        biblioteca.devolver(&Fecha::new(1,5,2026),&libro1,&cliente4);
+        biblioteca.devolver(&Fecha::new(1,5,2026),&libro6,&cliente4);
+        biblioteca.devolver(&Fecha::new(1,5,2026),&libro6,&cliente2);
+
+        //Un prestamo devuelto
+        if let Some(p) = biblioteca.buscar(&libro6, &cliente2){
+            assert!(p.estado.es_igual_a(&Estado::Devuelto),"El prestamo no se devolvio anteriormente");
+        }else{
+            panic!("Se esperaba encontrar el prestamo");
+        }
+
+        //Un prestamo pendiente
+        if let Some(p) = biblioteca.buscar(&libro2, &cliente3){
+            assert!(p.estado.es_igual_a(&Estado::EnPrestamo),"El prestamo tendria que estar pendiente");
+        }else{
+            panic!("Se esperaba encontrar el prestamo");
+        }
+
+        //Un prestamo inexistente
+        if let Some(p) = biblioteca.buscar(&libro1,&cliente2){
+            panic!("No deberia existir el prestamo en el registro");
+        }
+        
+    }
     /* 
     #[test]
     fn operatoria_prestamos() {
