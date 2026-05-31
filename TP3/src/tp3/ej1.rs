@@ -37,11 +37,8 @@ impl Persona{
 
         return res;
     }
-    fn obtener_edad(&self)->u32{
-        if let Some(anios) = &self.edad{
-            return *anios;
-        }
-        return 0;
+    fn obtener_edad(&self)->Option<u32>{
+        return self.edad.clone()
     }
     fn actualizar_direccion(&mut self,nueva_direccion : &String){
         self.direccion = Some(nueva_direccion.clone());
@@ -58,7 +55,11 @@ mod testing_ejercicio1{
         let mut persona = Persona::new(Some("Javier".to_string()), Some(30), Some("Calle 8".to_string()));
         
         //Verificacion de datos
-        assert_eq!(persona.obtener_edad(),30);
+        if let Some(edad) = persona.obtener_edad(){
+            assert_eq!(edad,30);
+        }else{
+            panic!("La persona deberia tener una edad");
+        }
 
         assert_eq!(persona.to_string(),"Javier,30,Calle 8;".to_string());
 
@@ -73,7 +74,7 @@ mod testing_ejercicio1{
         let mut persona = Persona::new(None, None, None);
         
         //Verificacion de datos
-        assert_eq!(persona.obtener_edad(),0);
+        assert!(persona.obtener_edad().is_none(),"No deberia tener asignado una edad");
 
         assert_eq!(persona.to_string(),",,;".to_string());
 
