@@ -95,7 +95,7 @@ impl Auto{
 	pub fn get_precio_bruto(&self)->f32{
 		return self.precio_bruto
 	}
-	pub fn get_color(&self)->Color{
+	pub fn get_color(&self)->Colores{
 		return self.color.clone()
 	}
 	pub fn es_igual_a(&self,a:&Auto)->bool{
