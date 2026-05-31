@@ -117,7 +117,7 @@ impl PlayList{
             for cancion in self.canciones.clone(){
                 if cancion.genero.es_igual_a(gen_in) {
                     res.push(cancion);
-                    break;
+                    
                 }
             }
         }
@@ -129,7 +129,7 @@ impl PlayList{
             for cancion in self.canciones.clone(){
                 if cancion.get_artista() == *nom {
                     res.push(cancion);
-                    break;
+                    
                 }
             }
         }
@@ -185,6 +185,7 @@ mod testing_ejercicio8{
     fn listado_canciones(){
         let mut p = PlayList::new(&"asd".to_string());
         let c1 = Cancion::new(&String::from("pepe"), &String::from("pepito"), &Generos::Rap);
+        let c4 = Cancion::new(&String::from("pepesito"), &String::from("pepito"), &Generos::Jazz);
         let c2 = Cancion::new(&String::from("donPepe"), &String::from("donPepito"), &Generos::Rap);
         let c3 = Cancion::new(&String::from("qwe"), &String::from("Qwe"), &Generos::Rock);
         p.agregar_cancion(&c1);
@@ -192,11 +193,13 @@ mod testing_ejercicio8{
         p.agregar_cancion(&c1);
         p.agregar_cancion(&c3);
         p.agregar_cancion(&c3);
+        p.agregar_cancion(&c4);
 
-        //Listados de un unico uso para el test
+        //Listados
         let lista1 = p.canciones_genero(&Generos::Rap);
         
         if !lista1.is_empty(){
+            assert_eq!(lista1.len(),3);
             for cancion in lista1{
                 assert_eq!(cancion.genero.es_igual_a(&Generos::Rap),true);
             }
@@ -207,6 +210,7 @@ mod testing_ejercicio8{
         let lista2 = p.canciones_artista(&"pepito".to_string());
 
         if !lista2.is_empty(){
+            assert_eq!(lista2.len(),3);
             for cancion in lista2{
                 assert_eq!(cancion.get_artista() == "pepito".to_string(),true);
             }
