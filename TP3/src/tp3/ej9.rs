@@ -264,6 +264,9 @@ impl Duenio {
     pub fn es_igual_a(&self,d:&Duenio)->bool{
         return (self.nombre == d.get_nombre())&&(self.direccion == d.get_direccion())&&(self.telefono == d.get_num_telefono());
     }
+    pub fn datos_iguales_a(&self,nom:&String,tel:u32)->bool{
+        return (self.nombre==*nom)&&(self.telefono==tel)
+    }
     //Metodos Primarios
     pub fn new(nombre_in: &String,direccion_in: &String,telefono_in: u32) -> Duenio {
         return Duenio{
@@ -292,6 +295,9 @@ impl Mascota {
     pub fn es_igual_a(&self,m:&Mascota)->bool{
         return (self.nombre == m.get_nombre())&&(self.edad == m.get_edad())&&(self.tipo.es_igual_a(&m.get_tipo()))&&(self.duenio.es_igual_a(&m.get_duenio()));
     }
+    pub fn datos_iguales_a(&self,nom:&String,nom_duenio:&String,tel:u32)->bool{
+        return (self.nombre==*nom)&&(self.duenio.datos_iguales_a(&nom_duenio,tel))
+    }
     //Metodos primarios
     pub fn new(nombre_in: &String,edad_in: u32,tipo_in: &Animales,duenio_in: &Duenio) -> Mascota {
         return Mascota{
@@ -308,24 +314,21 @@ impl Atencion {
     pub fn get_mascota(&self)->Mascota{
         return self.mascota.clone()
     }
-    pub fn get_diagnostico(&self)->String{
-        return self.diagnostico.clone()
-    }
-    pub fn get_tratamiento(&self)->String{
-        return self.tratamiento.clone()
+    pub fn datos_iguales_a(&self,nom_mascota:&String,nom_duenio:&String,tel:u32)->bool{
+        return self.mascota.datos_iguales_a(&nom_mascota,&nom_duenio,tel)
     }
     pub fn es_igual_a(&self,ate:&Atencion)->bool{
-        let mut cumple = false;
-        if let Some(tiene_fecha) = &self.proxima_visita{
-            if let Some(hay_fecha) = &ate.proxima_visita{
-                cumple = tiene_fecha.es_igual_a(&hay_fecha);
+        let mut tiene_fecha = false;
+        if let Some(fecha1) = &self.proxima_visita{
+            if let Some(fecha2) = &ate.proxima_visita{
+                tiene_fecha = fecha1.es_igual_a(&fecha2);
             }
         }else{
             if ate.proxima_visita.is_none(){
-                cumple = true;
+                tiene_fecha = true;
             }
         }
-        return (self.mascota.es_igual_a(&ate.get_mascota()))&&(self.diagnostico == ate.get_diagnostico())&&(self.tratamiento == ate.get_tratamiento())&&(cumple);
+        return self.mascota.es_igual_a(&ate.get_mascota())&&(self.diagnostico==ate.diagnostico)&&(self.tratamiento==ate.tratamiento)&&(tiene_fecha)
     }
     pub fn cambiar_diagnostico(&mut self,diag:&String){
         self.diagnostico = diag.clone();
@@ -397,8 +400,10 @@ impl Veterinaria{
     pub fn buscar_atencion(&self,nom_mascota:&String,nom_duenio:&String,tel:u32)->Option<Atencion>{
         let mut res : Option<Atencion> = None;
         if !self.atenciones_realizadas.is_empty(){
-            for ate in self.atenciones_realizadas.clone(){
-                if(ate.mascota.get_nombre() == nom_mascota.clone())&&(ate.mascota.duenio.get_nombre() == nom_duenio.clone())&&(ate.mascota.duenio.telefono == tel){
+            let mut atenciones = self.atenciones_realizadas.clone();
+            atenciones.reverse();
+            for ate in atenciones{
+                if ate.datos_iguales_a(&nom_mascota,&nom_duenio, tel){
                     res = Some(ate);
                     break;
                 }
@@ -418,7 +423,7 @@ impl Veterinaria{
     }
     pub fn modificar_fecha(&mut self,ate:&Atencion,fecha: &Option<Fecha>) {
         if !self.atenciones_realizadas.is_empty(){
-            for i in 0..self.atenciones_realizadas.len() {
+            for i in 0..self.atenciones_realizadas.len(){
                 if self.atenciones_realizadas[i].es_igual_a(&ate) {
                     self.atenciones_realizadas[i].cambiar_fecha(&fecha);
                     break;
@@ -504,37 +509,36 @@ mod testing_ejercicio9{
             panic!("No se atendio a ningun animal");
         }
         
-        //Busqueda y eliminacion de la primera atencion
+        //Busqueda y eliminacion de la ultima atencion
         if let Some(ate_actual) = v.buscar_atencion(&"Luchito".to_string(),&"Marcos".to_string(),1234){
-            assert_eq!(ate_actual.es_igual_a(&ate1),true);
-            v.eliminar_atencion(&ate1);
+            assert_eq!(ate_actual.es_igual_a(&ate2),true);
+            v.eliminar_atencion(&ate2);
         }else{
             panic!("No se encontro tal recepcion");
         }
     
-        //Busqueda de atencion
+        //Busqueda de la primer atencion(la unica que queda en el registro)
         if let Some(ate_actual) = v.buscar_atencion(&"Luchito".to_string(),&"Marcos".to_string(),1234){
-            assert_eq!(ate_actual.es_igual_a(&ate1),false);
+            assert_eq!(ate_actual.es_igual_a(&ate1),true);
+            v.modificar_diagnostico(&ate_actual, &"Vomitos".to_string()); //ate1
         }else{
             panic!("No se encontro tal recepcion");
         }
 
-        //Modificar la atencion actual(segunda recepcion)
-        v.modificar_diagnostico(&ate2,&"Vomitos".to_string());
 
         //Busqueda de atencion y modificacion de fecha
         if let Some(ate_actual) = v.buscar_atencion(&"Luchito".to_string(),&"Marcos".to_string(),1234){
-            let ate3 = Atencion::new(&animal1,&"Vomitos".to_string(),&"Pipeta".to_string(),&Some(Fecha::new(5,5,2025)));
-            assert_eq!(ate_actual.es_igual_a(&ate3),true);
-            v.modificar_fecha(&ate_actual,&None);
+            ate1 = Atencion::new(&animal1,&"Vomitos".to_string(),&"Pipeta".to_string(),&None);
+            assert_eq!(ate_actual.es_igual_a(&ate1),true);
+            v.modificar_fecha(&ate_actual,&Some(Fecha::new(5,5,2025)));
         }else{
             panic!("No se encontro tal recepcion");
         }
 
         //Busqueda de atencion modificada 
         if let Some(ate_actual) = v.buscar_atencion(&"Luchito".to_string(),&"Marcos".to_string(),1234){
-            let ate3 = Atencion::new(&animal1,&"Vomitos".to_string(),&"Pipeta".to_string(),&None );
-            assert_eq!(ate_actual.es_igual_a(&ate3),true);
+            ate1 = Atencion::new(&animal1,&"Vomitos".to_string(),&"Pipeta".to_string(),&Some(Fecha::new(5,5,2025)) );
+            assert_eq!(ate_actual.es_igual_a(&ate1),true);
         }else{
             panic!("No se encontro tal recepcion");
         }
