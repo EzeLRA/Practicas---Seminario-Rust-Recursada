@@ -178,7 +178,7 @@ impl ConcesionarioAuto{
 
             let mut total = InformeColores::new();
             for a in &self.autos{
-                total.sumar_monto_color(a.color,a.calcular_precio());
+                total.sumar_monto_color(a.get_color(),a.calcular_precio());
             }
             res = Some(total);
         }
@@ -195,13 +195,13 @@ impl ConcesionarioAuto{
 
 //Asignar derives en v2
 struct ColorMonto{
-    categoria_color : Color,
+    categoria_color : Colores,
     monto_total : f32
 }
 
 impl ColorMonto{
-    pub fn new(c:Color,m:f32)->ColorMonto{
-        return ColorMonto{categoria_color:c,m}
+    pub fn new(c:Colores,m:f32)->ColorMonto{
+        return ColorMonto{categoria_color:c,monto_total:m}
     }
 }
 
