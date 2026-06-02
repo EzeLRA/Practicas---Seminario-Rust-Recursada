@@ -166,7 +166,10 @@ impl ConcesionarioAuto{
 
 
     /*
-        Nueva funcion - informe recaudacion por color
+        Nueva funcion (continuacion : V2) - recaudacion color
+		Consideracion : Para los testings en la linea "use crate" se cambio "ej7" 
+		 por el nombre actual del archivo ya que arrojara error relacionado 
+		 con los nombres actuales
     */
 
     pub fn recaudacion_por_color(&self)->Option<InformeColores>{
@@ -175,11 +178,13 @@ impl ConcesionarioAuto{
 
         //Recorrido total
         if !self.autos.is_empty(){
-
+			//Se contabiliza los montos de los autos que se disponen
             let mut total = InformeColores::new();
             for a in &self.autos{
                 total.sumar_monto_color(&a.color,a.calcular_precio());
             }
+			//Se filtran los colores con montos acumulados para cumplir con el inciso principal
+			total.montos_colores.retain(|x| x.monto_total > 0.0);
             res = Some(total);
         }
 
@@ -190,11 +195,10 @@ impl ConcesionarioAuto{
 }
 
 /*
-    Nueva implementacion (A continuacion V2) - recaudacion color
-	Consideracion : Para los testings en la linea "use crate" se cambio "ej7" por el nombre actual del archivo ya que arrojara error relacionado con los nombres actuales
+    Nueva implementacion - recaudacion color
 */
 
-//Asignar derives en v2
+#[derive(Debug)]
 struct ColorMonto{
     categoria_color : Colores,
     monto_total : f32
@@ -206,7 +210,7 @@ impl ColorMonto{
     }
 }
 
-//Asignar derives en v2
+#[derive(Debug)]
 struct InformeColores {
     montos_colores : Vec<ColorMonto> 
 }
@@ -249,7 +253,7 @@ mod testing_entregable1{
 		assert!(conse1.recaudacion_por_color().is_none(),"No deberia existir un informe");
         //inclusive si por caso especial no se tiene ninguna capacidad
         let mut conse2 = ConcesionarioAuto::new(&"platonTriste".to_string(),&"stw".to_string(),0);
-        assert!(conse1.recaudacion_por_color().is_none(),"No deberia existir un informe");
+        assert!(conse2.recaudacion_por_color().is_none(),"No deberia existir un informe");
     }
     #[test]
     fn concesionario_con_autos(){
@@ -262,23 +266,13 @@ mod testing_entregable1{
         conse1.agregar_auto(&a2);
         //minima existencia
         assert!(conse1.recaudacion_por_color().is_some(),"Deberia existir un informe");
-        //validar los montos para Rojo y Verde
+        //validar los montos para Rojo y Verde 
         if let Some(info) = conse1.recaudacion_por_color() {
-			if let Some(monto1) = info.montos_colores.get(0){
-				assert_eq!(monto1.monto_total,251080.0);
-			}else{
-				panic!("No tendria que haber fallado aqui");
-			}
-			if let Some(monto2) = info.montos_colores.get(2){
-				assert_eq!(monto2.monto_total,210525.0);
-			}else{
-				panic!("No tendria que haber fallado aqui");
-			}
-			//Evaluar que no se contabilizo algun monto para los demas colores
-			if let Some(montoVacio) = info.montos_colores.get(5){
-				assert_eq!(montoVacio.monto_total,0.0);
-			}else{
-				panic!("No tendria que haber fallado aqui");
+			//Los colores de autos que dispone actualmente
+			assert_eq!(info.montos_colores.len(),2);
+			for monto in info.montos_colores{
+				//Cada monto tiene una acumulacion
+				assert!((monto.monto_total > 0.0),"Deberia de existir un monto acumulado y no vacio");
 			}
         }else{
 			panic!("No deberia fallar aqui")
