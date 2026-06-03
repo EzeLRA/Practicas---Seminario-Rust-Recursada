@@ -166,10 +166,10 @@ impl ConcesionarioAuto{
 
 
     /*
-        Nueva funcion (continuacion : V2) - recaudacion color
+        Nueva funcion (continuacion : V2) - recaudacion por color
 		Consideracion : Para los testings en la linea "use crate" se cambio "ej7" 
-		 por el nombre actual del archivo ya que arrojara error relacionado 
-		 con los nombres actuales
+		 por el nombre actual del archivo ya que arrojara un error relacionado 
+		 con los nombres
     */
 
     pub fn recaudacion_por_color(&self)->Option<InformeColores>{
@@ -183,7 +183,7 @@ impl ConcesionarioAuto{
             for a in &self.autos{
                 total.sumar_monto_color(&a.color,a.calcular_precio());
             }
-			//Se filtran los colores con montos acumulados para cumplir con el inciso principal
+			//Se filtran los colores con montos acumulados para cumplir con lo pedido
 			total.montos_colores.retain(|x| x.monto_total > 0.0);
             res = Some(total);
         }
@@ -195,7 +195,7 @@ impl ConcesionarioAuto{
 }
 
 /*
-    Nueva implementacion - recaudacion color
+    Nueva implementacion - recaudacion por color
 */
 
 #[derive(Debug)]
@@ -243,7 +243,7 @@ impl InformeColores{
 */
 
 #[cfg(test)]
-mod testing_entregable1{
+mod testing_entregable2{
 	use crate::tp3::entregable2::{Auto, Colores, ConcesionarioAuto};
 
     #[test]
@@ -271,7 +271,7 @@ mod testing_entregable1{
 			//Los colores de autos que dispone actualmente
 			assert_eq!(info.montos_colores.len(),2);
 			for monto in info.montos_colores{
-				//Cada monto tiene una acumulacion
+				//Cada monto acumulado
 				assert!((monto.monto_total > 0.0),"Deberia de existir un monto acumulado y no vacio");
 			}
         }else{
