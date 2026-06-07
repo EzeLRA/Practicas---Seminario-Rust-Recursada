@@ -62,7 +62,7 @@ pub fn ciudadanos_mayores_a<'a>(vector_p : &Vec<Persona<'a>>, edad:u8 , nom_ciu 
 }
 
 //Modulo C
-pub fn ciudadano_pertenecientes_a<'a>(vector_p : &Vec<Persona<'a>> , nom_ciu : &String)->bool{
+pub fn ciudadanos_pertenecientes_a<'a>(vector_p : &Vec<Persona<'a>> , nom_ciu : &String)->bool{
     return vector_p.iter().all(|p| p.obtener_ciudad() == *nom_ciu)
 }
 
@@ -102,3 +102,73 @@ pub fn obtener_salarios_max_min<'a>(vector_p : &Vec<Persona<'a>>)->Option<(Perso
 
     return res
 }
+
+#[cfg(test)]
+mod test_ejercicio2{
+	use super::*;
+
+	/*
+		Metodos auxiliares
+	*/
+
+	fn retornar_test_vector1<'a>()->Vec<Persona<'a>>{
+		let mut vector : Vec<Persona> = Vec::new();
+		vector.push(Persona::new("Carlos","Maro","AvSanMartin","Buenos Aires",1500.0,10));
+		vector.push(Persona::new("Maria","Mercedes","AvBelgrano","Buenos Aires",20000.0,25));
+		vector.push(Persona::new("Julian","Wen","AvLibertad","Buenos Aires",28000.0,28));
+		vector.push(Persona::new("Marcos","Deroga","AvMoron","Chaco",100000.0,50));
+		return vector
+	}
+
+	fn retornar_test_vector2<'a>()->Vec<Persona<'a>>{
+		let mut vector : Vec<Persona> = Vec::new();
+		vector.push(Persona::new("Mateo","Parro","AvSanMartin","Buenos Aires",1500.0,12));
+		vector.push(Persona::new("Carlos","Maro","AvSanMartin","Buenos Aires",1500.0,10));
+		vector.push(Persona::new("Maria","Mercedes","AvBelgrano","Buenos Aires",20000.0,25));
+		vector.push(Persona::new("Julian","Wen","AvLibertad","Buenos Aires",280000.0,28));
+		vector.push(Persona::new("Juan","Cruz","AvLibertad","Buenos Aires",280000.0,38));
+		vector.push(Persona::new("Matozo","Deroga","AvMoron","Buenos Aires",100000.0,50));
+		return vector
+	}
+
+	/*
+		Modulos para testing
+	*/
+
+	#[test]
+	fn vector_vacio(){
+		let mut vec_vacio = Vec::new();
+		assert!(salarios_mayores_a(&vec_vacio, 1000.0).is_empty());
+		assert!(ciudadanos_mayores_a(&vec_vacio,20,&"Buenos Aires".to_string()).is_empty());
+		assert_eq!(ciudadanos_pertenecientes_a(&vec_vacio,&"Marmol".to_string()),true);	//Considerando que los metodos de iterator retornan true para vec vacios por defecto
+		assert_eq!(ciudadanos_existentes_en(&vec_vacio,&"Lanus".to_string()),false); //Al contrario de arriba retorna false
+		assert_eq!(persona_existente(&vec_vacio,&Persona::new(&"Matias",&"Ponzi",&"Alvear & 12", &"Argentino", 800000.0, 29)),false);
+		assert!(obtener_edades(&vec_vacio).is_empty());
+		assert!(obtener_salarios_max_min(&vec_vacio).is_none());
+	}
+
+	#[test]
+	fn vector_con_personas(){
+		let mut vector = retornar_test_vector1();
+		assert_eq!(salarios_mayores_a(&vector, 10000.0).len(),3);
+		assert_eq!(ciudadanos_mayores_a(&vector,20,&"Buenos Aires".to_string()).len(),2);
+		assert_eq!(ciudadanos_mayores_a(&vector,20,&"Misiones".to_string()).len(),0);
+		assert_eq!(ciudadanos_pertenecientes_a(&vector,&"Chaco".to_string()),false);
+		assert_eq!(ciudadanos_pertenecientes_a(&retornar_test_vector2(),&"Buenos Aires".to_string()),true);
+		assert_eq!(ciudadanos_existentes_en(&vector,&"Chaco".to_string()),true);
+		assert_eq!(ciudadanos_existentes_en(&vector,&"Salta".to_string()),false);
+		assert_eq!(persona_existente(&vector,&Persona::new("Maria","Mercedes","AvBelgrano","Buenos Aires",20000.0,25)),true);
+		assert_eq!(persona_existente(&vector,&Persona::new("Maria","Mercedes","AvBelgrano","Buenos Aires",20000.0,17)),false);
+		assert_eq!(obtener_edades(&vector).len(),4);
+		assert!(obtener_salarios_max_min(&vector).is_some());
+		if let Some(personas) = obtener_salarios_max_min(&vector){
+			assert_eq!(personas.0.obtener_edad(),50);
+			assert_eq!(personas.1.obtener_edad(),10);
+		}
+		if let Some(personas) = obtener_salarios_max_min(&retornar_test_vector2()){
+			assert_eq!(personas.0.obtener_edad(),38);
+			assert_eq!(personas.1.obtener_edad(),12);
+		}
+	}
+}
+
