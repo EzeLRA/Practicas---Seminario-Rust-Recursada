@@ -1,83 +1,101 @@
 /*
-	Estructuras secundarias : Suscripciones , Medios de pago y usuarios
+	Estructuras secundarias : Suscripciones y Medios de pago(Con sus datos)
 */
 
 #[derive(PartialEq,Debug,Clone)]
-pub enum Suscripciones{
+enum Suscripciones{
 	Basic,
 	Clasic,
 	Super
 }
+
+#[derive(PartialEq, Debug, Clone)]
+struct InfoMercadoPago {
+    alias: String,
+    cuil: String,
+}
+
+#[derive(PartialEq, Debug, Clone)]
+struct InfoTransferencia {
+    cbu: String,
+    banco: String,
+}
+
+#[derive(PartialEq, Debug, Clone)]
+struct InfoTarjeta {
+    numero_tarjeta: String,
+    franquicia: String, 
+}
+
+#[derive(PartialEq, Debug, Clone)]
+struct InfoCripto {
+    wallet_address: String,
+    red: String,
+}
+
 #[derive(PartialEq,Debug,Clone)]
-//No se agrego el tipo de dato que contienen cada dato porque no se piden calculos sobre la misma
-pub enum Medios_de_pago{
+enum MediosDePago{
 	Efectivo,
-	Mercado_pago,
-	Transferencia_bancaria,
-	Tarjeta_de_credito,
-	Criptomoneda
+	Mercado_pago(InfoMercadoPago),
+	Transferencia_bancaria(InfoTransferencia),
+	Tarjeta_de_credito(InfoTarjeta),
+	Criptomoneda(InfoCripto)
 }
 
 /*
-	Estructura primaria : Usuario
+	Estructura primaria : Usuario y suscripcion
 */
 
 #[derive(PartialEq,Debug,Clone)]
-pub struct Suscripcion_activa{
+struct SuscripcionActiva{
+	//Referencia al usuario
+	nom_usuario : String,
+	dni_usuario : u64,
+	//Datos de contrato para la misma
 	tipo_suscripcion : Suscripciones,
 	costo_mensual : f64,
 	duracion_mes : u8,
 	fecha_inicio : u64,
-	tipo_pago : Medios_de_pago
+	tipo_pago : MediosDePago
 }
 
 #[derive(PartialEq,Debug,Clone)]
-pub struct Usuario{
+struct Usuario{
 	nombre : String,
 	dni : u64 ,
-	suscripcion_actual : Option<Suscripcion_activa>,
-	suscripcion_anterior : Option<Suscripcion_activa>
+	suscripcion_actual : Option<SuscripcionActiva>,
+}
+
+/*
+	Estructura plataforma
+*/
+
+struct Plataforma{
+	usuarios : Vec<Usuario>,
+	registro_suscripciones : Vec<SuscripcionActiva>
 }
 
 /*
 	Funcionalidades secundarias : Suscripciones , Medios de pago y usuario
 */
 
-pub trait DatosSuscripcion{
-    fn get_medio(&self)->Medios_de_pago;
-    fn get_tipo(&self)->Suscripciones;
-    fn set_tipo(&mut self,t:Suscripciones);
-}
-pub trait DatosUsuario{
-	fn get_nombre(&self)->String;
-	fn get_suscripcion_anterior(&self)->Option<Suscripcion_activa>;
-	fn get_suscripcion_actual(&self)->Option<Suscripcion_activa>;
-	fn set_suscripcion_actual(&mut self,s:&Suscripcion_activa);
-}
-impl DatosUsuario for Usuario{
+impl Usuario{
 	fn get_nombre(&self)->String {
 		return self.nombre.clone();
 	}
-	fn get_suscripcion_anterior(&self)->Option<Suscripcion_activa>{
-		if self.suscripcion_anterior.is_some() {
-			return self.suscripcion_anterior.clone();
-		}
-		return None;
-	}
-	fn get_suscripcion_actual(&self)->Option<Suscripcion_activa>{
+	fn get_suscripcion_actual(&self)->Option<SuscripcionActiva>{
 		if self.suscripcion_actual.is_some() {
 			return self.suscripcion_actual.clone();
 		}
 		return None;
 	}
-	fn set_suscripcion_actual(&mut self,s:&Suscripcion_activa){
-		self.suscripcion_anterior = self.suscripcion_actual.clone();
+	fn set_suscripcion_actual(&mut self,s:&SuscripcionActiva){
 		self.suscripcion_actual = Some(s.clone());
 	}
 }
 
-impl DatosSuscripcion for Suscripcion_activa {
-	fn get_medio(&self)->Medios_de_pago{
+impl SuscripcionActiva {
+	fn get_medio(&self)->MediosDePago{
 		return self.tipo_pago.clone();
 	}
 	 fn get_tipo(&self)->Suscripciones{
@@ -92,10 +110,10 @@ impl DatosSuscripcion for Suscripcion_activa {
 	Funcionalidades primarias para usuario
 */
 
-impl Suscripcion_activa{
+impl SuscripcionActiva{
 	//Funciones primarias
-	fn crear_suscripcion(tipo:Suscripciones,monto:f64,duracion:u8,fecha_ini : u64,metodo_pago:Medios_de_pago)->Suscripcion_activa{
-		return Suscripcion_activa{
+	fn crear_suscripcion(tipo:Suscripciones,monto:f64,duracion:u8,fecha_ini : u64,metodo_pago:MediosDePago)->SuscripcionActiva{
+		return SuscripcionActiva{
 			tipo_suscripcion : tipo,
 			costo_mensual : monto,
 			duracion_mes : duracion,
@@ -124,12 +142,11 @@ impl Suscripcion_activa{
 }
 
 impl Usuario{
-	fn new(nom:&String,dni_in:u64,s:Option<Suscripcion_activa>)->Usuario{
+	fn new(nom:&String,dni_in:u64,s:SuscripcionActiva)->Usuario{
 		return Usuario{
 			nombre : nom.clone(),
 			dni : dni_in,
-			suscripcion_actual : s,
-			suscripcion_anterior : None	
+			suscripcion_actual : Some(s.clone()),
 		}
 	}
 	fn upgrade_suscripcion(&mut self)->bool{
@@ -180,12 +197,12 @@ fn obtener_max<const N:usize>(arr: [u8;N])->Option<usize>{
 	return None;
 }
 
-pub struct Plataforma{
-	usuarios : Vec<Usuario>
-}
 impl Plataforma{
 	fn new()->Plataforma{
-		return Plataforma { usuarios: Vec::new() }
+		return Plataforma {
+			usuarios: Vec::new(), 
+			registro_suscripciones : Vec::new()
+		}
 	}
 	fn agregar(&mut self,u2:&Usuario)->bool{
 		match self.usuarios.iter().find(|us| us.es_igual_a(&u2)) {
@@ -219,20 +236,20 @@ impl Plataforma{
             None => return false,
         }
     }
-	fn metodo_pago_mas_usado(&self)->Option<Medios_de_pago>
+	fn metodo_pago_mas_usado(&self)->Option<MediosDePago>
 	{	
 		if !self.usuarios.is_empty(){
-			let mut res : Option<Medios_de_pago> = None;
+			let mut res : Option<MediosDePago> = None;
 
 			let mut metodos_cant = [0; 5];
 			self.usuarios.iter().for_each(|user| {
 				if let Some(s) = user.get_suscripcion_actual(){
 					match s.get_medio(){
-						Medios_de_pago::Efectivo => metodos_cant[0] +=1,
-						Medios_de_pago::Mercado_pago => metodos_cant[1] +=1,
-						Medios_de_pago::Transferencia_bancaria => metodos_cant[2] +=1,
-						Medios_de_pago::Tarjeta_de_credito => metodos_cant[3] +=1,
-						Medios_de_pago::Criptomoneda => metodos_cant[4] +=1,
+						MediosDePago::Efectivo => metodos_cant[0] +=1,
+						MediosDePago::Mercado_pago(_) => metodos_cant[1] +=1,
+						MediosDePago::Transferencia_bancaria(_) => metodos_cant[2] +=1,
+						MediosDePago::Tarjeta_de_credito(_) => metodos_cant[3] +=1,
+						MediosDePago::Criptomoneda(_) => metodos_cant[4] +=1,
 					}
 				}
 			});
@@ -283,10 +300,10 @@ impl Plataforma{
 		}
 		return None
 	}
-	fn metodo_pago_anterior_mas_usado(&self)->Option<Medios_de_pago>
+	fn metodo_pago_anterior_mas_usado(&self)->Option<MediosDePago>
 	{	
 		if !self.usuarios.is_empty(){
-			let mut res : Option<Medios_de_pago> = None;
+			let mut res : Option<MediosDePago> = None;
 
 			let mut metodos_cant = [0; 5]; 
 			self.usuarios.iter().for_each(|user| {
@@ -359,13 +376,13 @@ mod test_ejercicio3{
 	fn operar_suscripcion_usuario(){
 		let mut usuario1 = Usuario::new(&"Daniel".to_string() , 
 		64254 , 
-		Some(Suscripcion_activa::crear_suscripcion(Suscripciones::Basic,
+		Some(SuscripcionActiva::crear_suscripcion(Suscripciones::Basic,
 			 123.5,
 			  5, 
 			  120325, 
-			  Medios_de_pago::Transferencia_bancaria)));
+			  MediosDePago::Transferencia_bancaria)));
 			
-		assert_eq!(usuario1,Usuario::new(&"Daniel".to_string() , 64254 , Some(Suscripcion_activa::crear_suscripcion(Suscripciones::Basic,123.5,5, 120325, Medios_de_pago::Transferencia_bancaria))) );
+		assert_eq!(usuario1,Usuario::new(&"Daniel".to_string() , 64254 , Some(SuscripcionActiva::crear_suscripcion(Suscripciones::Basic,123.5,5, 120325, Medios_de_pago::Transferencia_bancaria))) );
 		
 		assert!(usuario1.upgrade_suscripcion());
 
@@ -398,7 +415,7 @@ mod test_ejercicio3{
 		assert!(!usuario1.downgrade_suscripcion());
 
 		//Prueba de baja de suscripcion
-	    usuario1.set_suscripcion_actual(&Suscripcion_activa::crear_suscripcion(Suscripciones::Basic,123.5,5,120325,Medios_de_pago::Transferencia_bancaria));
+	    usuario1.set_suscripcion_actual(&SuscripcionActiva::crear_suscripcion(Suscripciones::Basic,123.5,5,120325,Medios_de_pago::Transferencia_bancaria));
 		assert!(usuario1.cancelar_suscripcion());
 		assert!(usuario1.get_suscripcion_actual().is_none());
 		assert!(!usuario1.cancelar_suscripcion());
@@ -408,35 +425,35 @@ mod test_ejercicio3{
 	fn operar_suscripciones_usuarios(){
 		let mut usuario1 = Usuario::new(&"Daniel".to_string() , 
 		64254 , 
-		Some(Suscripcion_activa::crear_suscripcion(Suscripciones::Basic,
+		Some(SuscripcionActiva::crear_suscripcion(Suscripciones::Basic,
 			 123.5,
 			  5, 
 			  120325, 
-			  Medios_de_pago::Transferencia_bancaria)));
+			  MediosDePago::Transferencia_bancaria)));
 
 		let mut usuario2 = Usuario::new(&"Tobias".to_string() , 
 		64254 , 
-		Some(Suscripcion_activa::crear_suscripcion(Suscripciones::Super,
+		Some(SuscripcionActiva::crear_suscripcion(Suscripciones::Super,
 			 243.5,
 			  5, 
 			  120325, 
-			  Medios_de_pago::Transferencia_bancaria)));
+			  MediosDePago::Transferencia_bancaria)));
 
 		let mut usuario3 = Usuario::new(&"Marcos".to_string() , 
 		542134 , 
-		Some(Suscripcion_activa::crear_suscripcion(Suscripciones::Super,
+		Some(SuscripcionActiva::crear_suscripcion(Suscripciones::Super,
 			 103.5,
 			  5, 
 			  120325, 
-			  Medios_de_pago::Efectivo)));
+			  MediosDePago::Efectivo)));
 
 		let mut usuario4 = Usuario::new(&"Dario".to_string() , 
 	32124 , 
-		Some(Suscripcion_activa::crear_suscripcion(Suscripciones::Clasic,
+		Some(SuscripcionActiva::crear_suscripcion(Suscripciones::Clasic,
 			 103.5,
 			  5, 
 			  120325, 
-			  Medios_de_pago::Criptomoneda)));
+			  MediosDePago::Criptomoneda)));
 	
 
 		//Plataforma vacia
@@ -457,7 +474,7 @@ mod test_ejercicio3{
 		
 		//Prueba estadistica
 		if let Some(tipo) = pl1.metodo_pago_mas_usado(){
-			assert_eq!(tipo,Medios_de_pago::Transferencia_bancaria);
+			assert_eq!(tipo,MediosDePago::Transferencia_bancaria);
 		}else{
 			panic!("No hubo un retorno esperado");
 		}
@@ -476,13 +493,13 @@ mod test_ejercicio3{
 		assert_eq!(pl1.upgrade_usuario(&usuario2),false);
 
 		if let Some(tipo) = pl1.metodo_pago_mas_usado(){
-			assert_eq!(tipo,Medios_de_pago::Transferencia_bancaria);
+			assert_eq!(tipo,MediosDePago::Transferencia_bancaria);
 		}else{
 			panic!("No hubo un retorno esperado");
 		}
 
 		if let Some(tipo) = pl1.metodo_pago_anterior_mas_usado(){
-			assert_eq!(tipo,Medios_de_pago::Transferencia_bancaria);
+			assert_eq!(tipo,MediosDePago::Transferencia_bancaria);
 		}else{
 			panic!("No hubo un retorno esperado");
 		}
@@ -522,7 +539,7 @@ mod test_ejercicio3{
 		let mut usuario1 = Usuario::new(&"Dario".to_string() , 32124 , None );
 		let mut usuario2 = Usuario::new(&"Mario".to_string() , 367665 , None );
 		
-		let s = Suscripcion_activa::crear_suscripcion(Suscripciones::Super,100.0,5,120325,Medios_de_pago::Mercado_pago);
+		let s = SuscripcionActiva::crear_suscripcion(Suscripciones::Super,100.0,5,120325,Medios_de_pago::Mercado_pago);
 		usuario1.set_suscripcion_actual(&s);
 
 		//Plataforma
@@ -565,7 +582,7 @@ mod test_ejercicio3{
 
 		//Metodo pago max
 		if let Some(tipo) = pl1.metodo_pago_mas_usado(){
-			assert_eq!(tipo,Medios_de_pago::Mercado_pago);
+			assert_eq!(tipo,MediosDePago::Mercado_pago);
 		}else{
 			panic!("No hubo un retorno esperado");
 		}
@@ -587,57 +604,57 @@ mod test_ejercicio3{
 		pl1.eliminar(&usuario1);
 
 		//Nuevo metodo de pago
-		let s = Suscripcion_activa::crear_suscripcion(Suscripciones::Super,100.0,5,120325,Medios_de_pago::Tarjeta_de_credito);
+		let s = SuscripcionActiva::crear_suscripcion(Suscripciones::Super,100.0,5,120325,Medios_de_pago::Tarjeta_de_credito);
 		usuario2.set_suscripcion_actual(&s);
 		pl1.agregar(&usuario2);
 
 		if let Some(tipo) = pl1.metodo_pago_mas_usado(){
-			assert_eq!(tipo,Medios_de_pago::Tarjeta_de_credito);
+			assert_eq!(tipo,MediosDePago::Tarjeta_de_credito);
 		}else{
 			panic!("No hubo un retorno esperado");
 		}
 		pl1.downgrade_usuario(&usuario2);
 
 		if let Some(tipo) = pl1.metodo_pago_anterior_mas_usado(){
-			assert_eq!(tipo,Medios_de_pago::Tarjeta_de_credito);
+			assert_eq!(tipo,MediosDePago::Tarjeta_de_credito);
 		}else{
 			panic!("No hubo un retorno esperado");
 		}
 		pl1.eliminar(&usuario2);
 
 		//Nuevo metodo de pago
-		let s = Suscripcion_activa::crear_suscripcion(Suscripciones::Super,100.0,5,120325,Medios_de_pago::Efectivo);
+		let s = SuscripcionActiva::crear_suscripcion(Suscripciones::Super,100.0,5,120325,Medios_de_pago::Efectivo);
 		usuario2.set_suscripcion_actual(&s);
 		pl1.agregar(&usuario2);
 
 		if let Some(tipo) = pl1.metodo_pago_mas_usado(){
-			assert_eq!(tipo,Medios_de_pago::Efectivo);
+			assert_eq!(tipo,MediosDePago::Efectivo);
 		}else{
 			panic!("No hubo un retorno esperado");
 		}
 		pl1.downgrade_usuario(&usuario2);
 
 		if let Some(tipo) = pl1.metodo_pago_anterior_mas_usado(){
-			assert_eq!(tipo,Medios_de_pago::Efectivo);
+			assert_eq!(tipo,MediosDePago::Efectivo);
 		}else{
 			panic!("No hubo un retorno esperado");
 		}
 		pl1.eliminar(&usuario2);
 
 		//Nuevo metodo de pago
-		let s = Suscripcion_activa::crear_suscripcion(Suscripciones::Super,100.0,5,120325,Medios_de_pago::Criptomoneda);
+		let s = SuscripcionActiva::crear_suscripcion(Suscripciones::Super,100.0,5,120325,Medios_de_pago::Criptomoneda);
 		usuario2.set_suscripcion_actual(&s);
 		pl1.agregar(&usuario2);
 
 		if let Some(tipo) = pl1.metodo_pago_mas_usado(){
-			assert_eq!(tipo,Medios_de_pago::Criptomoneda);
+			assert_eq!(tipo,MediosDePago::Criptomoneda);
 		}else{
 			panic!("No hubo un retorno esperado");
 		}
 		pl1.downgrade_usuario(&usuario2);
 
 		if let Some(tipo) = pl1.metodo_pago_anterior_mas_usado(){
-			assert_eq!(tipo,Medios_de_pago::Criptomoneda);
+			assert_eq!(tipo,MediosDePago::Criptomoneda);
 		}else{
 			panic!("No hubo un retorno esperado");
 		}
