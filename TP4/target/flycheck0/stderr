@@ -1,5 +1,5 @@
-   0.168959674s  INFO prepare_target{force=false package_id=TP4 v0.1.0 (/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP4) target="TP4"}: cargo::core::compiler::fingerprint: fingerprint error for TP4 v0.1.0 (/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP4)/Check { test: false }/TargetInner { name: "TP4", doc: true, ..: with_path("/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP4/src/main.rs", Edition2024) }
-   0.169079645s  INFO prepare_target{force=false package_id=TP4 v0.1.0 (/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP4) target="TP4"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP4/target/debug/.fingerprint/TP4-3123da60909e5ea3/bin-TP4`
+   0.131789533s  INFO prepare_target{force=false package_id=TP4 v0.1.0 (/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP4) target="TP4"}: cargo::core::compiler::fingerprint: fingerprint error for TP4 v0.1.0 (/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP4)/Check { test: false }/TargetInner { name: "TP4", doc: true, ..: with_path("/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP4/src/main.rs", Edition2024) }
+   0.131870650s  INFO prepare_target{force=false package_id=TP4 v0.1.0 (/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP4) target="TP4"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP4/target/debug/.fingerprint/TP4-3123da60909e5ea3/bin-TP4`
 
 Caused by:
     No such file or directory (os error 2)
@@ -41,8 +41,8 @@ Stack backtrace:
   24: <unknown>
   25: __libc_start_main
   26: <unknown>
-   0.198645584s  INFO prepare_target{force=false package_id=TP4 v0.1.0 (/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP4) target="TP4"}: cargo::core::compiler::fingerprint: fingerprint error for TP4 v0.1.0 (/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP4)/Check { test: true }/TargetInner { name: "TP4", doc: true, ..: with_path("/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP4/src/main.rs", Edition2024) }
-   0.198697170s  INFO prepare_target{force=false package_id=TP4 v0.1.0 (/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP4) target="TP4"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP4/target/debug/.fingerprint/TP4-0dd206a9b87f2123/test-bin-TP4`
+   0.167719737s  INFO prepare_target{force=false package_id=TP4 v0.1.0 (/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP4) target="TP4"}: cargo::core::compiler::fingerprint: fingerprint error for TP4 v0.1.0 (/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP4)/Check { test: true }/TargetInner { name: "TP4", doc: true, ..: with_path("/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP4/src/main.rs", Edition2024) }
+   0.167793726s  INFO prepare_target{force=false package_id=TP4 v0.1.0 (/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP4) target="TP4"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP4/target/debug/.fingerprint/TP4-0dd206a9b87f2123/test-bin-TP4`
 
 Caused by:
     No such file or directory (os error 2)
@@ -85,6 +85,6 @@ Stack backtrace:
   25: __libc_start_main
   26: <unknown>
     Checking TP4 v0.1.0 (/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP4)
-error: could not compile `TP4` (bin "TP4") due to 24 previous errors; 14 warnings emitted
+error: could not compile `TP4` (bin "TP4") due to 24 previous errors; 12 warnings emitted
 warning: build failed, waiting for other jobs to finish...
-error: could not compile `TP4` (bin "TP4" test) due to 63 previous errors; 22 warnings emitted
+error: could not compile `TP4` (bin "TP4" test) due to 131 previous errors; 20 warnings emitted

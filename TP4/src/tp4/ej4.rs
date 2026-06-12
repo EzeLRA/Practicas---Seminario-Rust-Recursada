@@ -1,356 +1,226 @@
-/*
-    Producto y venta
-*/
+use std::collections::HashMap;
+
+#[derive(PartialEq,Eq,Hash,Debug,Clone)]
+enum Categorias {
+    Alimento,
+    Bazar,
+    Limpieza,
+    Otro,
+}
+
 #[derive(PartialEq,Debug,Clone)]
-pub enum MediosDePago{
-    TarjetaCredito, 
-    TarjetaDébito, 
+enum MediosDePago {
+    TarjetaCredito,
+    TarjetaDebito,
     TransferenciaBancaria,
-    Efectivo
-}
-
-//Implementa su propio porcentaje de descuento integrado(100% a 0%)
-#[derive(PartialEq,Debug,Clone)]
-pub enum Categorias{
-	Alimento(f64),
-    Bazar(f64),
-    Limpieza(f64),
-    Otro(f64)
-}
-
-impl Default for Categorias {
-    fn default() -> Self {
-        return Categorias::Otro(0.0)
-    }
-}
-
-impl Categorias {
-    // Método que devuelve el valor numérico sin importar la variante
-    pub fn porcentaje(&self) -> f64 {
-        let mut res : f64 = 0.0;
-        match self {
-            Categorias::Alimento(val) => res = *val,
-            Categorias::Bazar(val) => res = *val,
-            Categorias::Limpieza(val) => res = *val,
-            Categorias::Otro(val) => res = *val,
-        }
-        return res;
-    }
-    
-    pub fn igual_a(&self,categ:&Categorias)->bool{
-        return categ == self;
-    }
+    Efectivo,
 }
 
 #[derive(PartialEq,Debug,Clone)]
-pub struct Producto{
-    nombre : String,
-    categoria : Categorias,
-    precio_base : f64,   
+struct Producto {
+    nombre: String,
+    categoria: Categorias,
+    precio_base: f64,
 }
 
-impl Producto{
-    fn new(nom : &String,cate : &Categorias,precio : f64)->Producto{
-        return Producto{
-            nombre : nom.clone(),
-            categoria : cate.clone(),
-            precio_base : precio
+impl Producto {
+    pub fn new(nombre: &str, categoria: Categorias, precio_base: f64) -> Producto {
+        Producto{
+            nombre: nombre.to_string(),
+            categoria,
+            precio_base,
         }
     }
-    fn obtener_precio_sin_descuento(&self)->f64{
-        return self.precio_base;
-    }
-    fn obtener_precio_con_descuento(&self)->f64{
-        return (self.precio_base * (100.0-self.categoria.porcentaje()) )/100.0;
-    }
-    fn categoria_igual_a(&self,categ : &Categorias)->bool{
-        return self.categoria.igual_a(&categ);
-    }
-}
-#[derive(PartialEq,Debug,Clone)]
-pub struct ProductoVendido(Producto,u64);
-
-impl ProductoVendido{
-    fn new(p : &Producto,cant : u64)->ProductoVendido{
-        return ProductoVendido(p.clone(),cant);
-    }
-    fn get_cant(&self)->u64{
-        return self.1 ;
-    }
-    fn get_producto(&self)->Producto{
-        return self.0.clone();
-    }
-    fn obtener_monto_descuento(&self)->f64{
-        return self.0.obtener_precio_con_descuento() * (self.1 as f64);
-    }
-    fn obtener_monto_generico(&self)->f64{
-        return self.0.obtener_precio_sin_descuento() * (self.1 as f64);
-    }
 }
 
 #[derive(PartialEq,Debug,Clone)]
-pub struct Fecha(u8,u8,u64);
-
-impl Fecha{
-    fn new(dia:u8,mes:u8,anio:u64)->Fecha{
-        return Fecha(dia,mes,anio);
-    }
+struct ProductoVendido {
+    producto: Producto,
+    cantidad: u64,
 }
 
-#[derive(PartialEq,Debug,Clone)]
-pub struct Venta{
-    fecha : Fecha,
-    cliente : Cliente,
-    vendedor : Vendedor,
-    medio_pago : MediosDePago,
-    productos : Vec<ProductoVendido>
-}
-
-impl Venta{
-    fn new(f:&Fecha,c:&Cliente,v:&Vendedor,medio:&MediosDePago)->Venta{
-        return Venta{
-            fecha : f.clone(),
-            cliente : c.clone(),
-            vendedor : v.clone(),
-            medio_pago : medio.clone(),
-            productos : Vec::new()
+impl ProductoVendido {
+    pub fn new(producto: &Producto, cantidad: u64) -> ProductoVendido {
+        ProductoVendido{
+            producto: producto.clone(),
+            cantidad,
         }
     }
-    fn agregar_producto(&mut self,p:&ProductoVendido){
-        self.productos.push(p.clone());
-    }
-    
-    fn monto_total(&self)->f64{
-        let mut total = 0.0;
-        if !self.productos.is_empty(){
-            let cumple = self.cliente.tiene_newsletter();
-            for producto in &self.productos{
-                if cumple {
-                    total += producto.obtener_monto_descuento();
-                }else{
-                    total += producto.obtener_monto_generico();
-                }
-            }
+}
+
+#[derive(PartialEq,Debug,Clone)]
+struct DatosPersona {
+    nombre: String,
+    apellido: String,
+    direccion: String,
+    dni: u64,
+}
+
+#[derive(PartialEq,Debug,Clone)]
+struct Cliente {
+    datos: DatosPersona,
+    correo_newsletter: Option<String>,
+}
+
+impl Cliente {
+    pub fn new(nombre: &str, apellido: &str, direccion: &str, dni: u64) -> Cliente {
+        Cliente {
+            datos: DatosPersona {
+                nombre: nombre.to_string(),
+                apellido: apellido.to_string(),
+                direccion: direccion.to_string(),
+                dni,
+            },
+            correo_newsletter: None,
         }
-        return total;
     }
+    pub fn suscribir_newsletter(&mut self, correo: &str) {
+        self.correo_newsletter = Some(correo.to_string());
+    }
+    pub fn tiene_newsletter(&self) -> bool {
+        self.correo_newsletter.is_some()
+    }
+}
 
-    fn retornar_venta_por_categoria(&self,categ:&Categorias)->Option<Venta>{
-        let mut res_fin : Option<Venta> = None;
-        
-        if !self.productos.is_empty(){
-            let mut res : Vec<ProductoVendido> = Vec::new();
-            for p in &self.productos{
-                if p.0.categoria_igual_a(categ){
-                    res.push(p.clone());
-                }
-            }
-            //Si la venta no tiene productos de determinada categoria entonces la venta se retorna como inexistente
-            if !res.is_empty(){
-                res_fin = Some( Venta{
-                    fecha : self.fecha.clone(),
-                    cliente : self.cliente.clone(),
-                    vendedor : self.vendedor.clone(),
-                    medio_pago : self.medio_pago.clone(),
-                    productos : res
-                });
-            }
+#[derive(PartialEq,Debug,Clone)]
+struct Vendedor {
+    datos: DatosPersona,
+    legajo: u64,
+    antiguedad: u8,
+    salario: f64,
+}
+
+impl Vendedor {
+    pub fn new(nombre: &str, apellido: &str, direccion: &str, dni: u64, legajo: u64, antiguedad: u8, salario: f64) -> Vendedor {
+        Vendedor {
+            datos: DatosPersona {
+                nombre: nombre.to_string(),
+                apellido: apellido.to_string(),
+                direccion: direccion.to_string(),
+                dni,
+            },
+            legajo,
+            antiguedad,
+            salario,
         }
-
-        return res_fin;
-    }
-
-    fn get_vendedor(&self)->Vendedor{
-        return self.vendedor.clone();
-    }
-
-    fn es_igual_a(&self,v:&Venta)->bool{
-        return self == v;
     }
 }
-
-/*
-    Personas
-*/
-#[derive(PartialEq,Debug,Clone)]
-pub struct Datos_Persona {
-    nombre : String,
-    apellido : String,
-    direccion : String,
-    dni : u64
-}
-
-impl Datos_Persona{
-    fn validar_datos(&self,datos : &Datos_Persona)->bool{
-        return (self.nombre == datos.nombre) &&
-            (self.apellido == datos.apellido) &&
-            (self.direccion == datos.direccion) &&
-            (self.dni == datos.dni);
-    } 
-}
-pub trait DatosPersona {
-    fn get_nombre(&self , datos:&Datos_Persona)->String{
-        return datos.nombre.clone();
-    }
-    fn get_apellido(&self , datos:&Datos_Persona)->String{
-        return datos.apellido.clone();
-    }
-    fn get_direccion(&self , datos:&Datos_Persona)->String{
-        return datos.direccion.clone();
-    }
-    fn get_dni(&self , datos:&Datos_Persona)->u64{
-        return datos.dni;
-    }
-}
-#[derive(PartialEq,Debug,Clone)]
-pub struct Cliente {
-    datos_cliente : Datos_Persona,
-    correo_newsletter : Option<String>
-}
-
-impl Cliente{
-    fn new(nom : &String,ape : &String,dir : &String,dni_in : u64)->Cliente{
-        return Cliente{
-            datos_cliente : Datos_Persona{nombre: nom.clone(),apellido: ape.clone(),direccion: dir.clone(),dni: dni_in},
-            correo_newsletter : None        }        
-    }
-    fn asignar_newsletter(&mut self,correo:&String){
-        self.correo_newsletter = Some(correo.clone());
-    }
-    fn tiene_newsletter(&self)->bool{
-        return self.correo_newsletter.is_some();
-    }
-}
-
-impl DatosPersona for Cliente{}
 
 #[derive(PartialEq,Debug,Clone)]
-pub struct Vendedor {
-    datos_vendedor : Datos_Persona,
-    nro_legajo : u64,
-    antiguedad : u8,
-    salario : f64
+struct Venta {
+    fecha: String,
+    cliente: Cliente,
+    vendedor: Vendedor,
+    medio_pago: MediosDePago,
+    productos: Vec<ProductoVendido>,
 }
 
-impl Vendedor{
-    fn new(nom : &String,ape : &String,dir : &String,Dni : u64,legajo : u64,ant : u8,monto : f64)->Vendedor{
-        return Vendedor{
-            datos_vendedor : Datos_Persona{nombre: nom.clone(),apellido: ape.clone(),direccion: dir.clone(),dni: Dni},
-            nro_legajo : legajo,
-            antiguedad : ant,
-            salario : monto
-        }        
-    }
-    fn get_legajo(&self)->u64{
-        return self.nro_legajo;
-    }
-    fn get_antiguedad(&self)->u8{
-        return self.antiguedad;
-    }
-    fn get_salario(&self)->f64{
-        return self.salario;
+impl Venta {
+    pub fn new(fecha: &str, cliente: &Cliente, vendedor: &Vendedor, medio_pago: MediosDePago, productos: Vec<ProductoVendido>) -> Venta {
+        Venta{
+            fecha: fecha.to_string(),
+            cliente: cliente.clone(),
+            vendedor: vendedor.clone(),
+            medio_pago,
+            productos,
+        }
     }
 }
 
-impl DatosPersona for Vendedor{}
-
-/*
-    Sistema
-*/
-#[derive(PartialEq,Debug,Clone)]
-pub struct CategPorcentajes(f64,f64,f64,f64);
-
-pub struct Sistema{
-    ventas : Vec<Venta>,
+// El sistema mantiene el registro de todo y contiene los datos necesarios
+struct Sistema {
+    ventas: Vec<Venta>,
     vendedores : Vec<Vendedor>,
     productos : Vec<Producto>,
-    categorias_porcentajes : CategPorcentajes,
-    newsletter : String
+    descuentos_categorias: HashMap<Categorias, f64>, // Lista de categorías con descuento
+    newsletter : String,
+    descuento_newsletter: f64,                      // Porcentaje general por newsletter
 }
 
-impl Sistema{
-    fn new(porcentajes:&CategPorcentajes,c:&String)->Sistema{
-        return Sistema {
-            ventas : Vec::new(),
+impl Sistema {
+    pub fn new(correo:&str,descuento_newsletter: f64) -> Self {
+        Self {
+            ventas: Vec::new(),
             vendedores : Vec::new(),
             productos : Vec::new(),
-            categorias_porcentajes : porcentajes.clone(),
-            newsletter : c.clone()
+            descuentos_categorias: HashMap::new(),
+            newsletter: correo.to_string(),
+            descuento_newsletter,
         }
     }
-    fn definir_categoria(&self,categ:&Categorias)->Categorias{
-        return match categ {
-            Categorias::Alimento(_) => Categorias::Alimento(self.categorias_porcentajes.0),
-            Categorias::Bazar(_) => Categorias::Bazar(self.categorias_porcentajes.1),
-            Categorias::Limpieza(_) => Categorias::Limpieza(self.categorias_porcentajes.2),
-            Categorias::Otro(_) => Categorias::Otro(self.categorias_porcentajes.3),
+
+    pub fn configurar_descuento_categoria(&mut self, categoria: Categorias, porcentaje: f64) {
+        self.descuentos_categorias.insert(categoria, porcentaje);
+    }
+
+    pub fn registrar_venta(&mut self, venta: Venta) {
+        self.ventas.push(venta);
+    }
+
+    // ACCIÓN: Calcular el precio final de una venta aplicando las reglas correctamente
+    pub fn calcular_precio_final(&self, venta: &Venta) -> f64 {
+        let mut subtotal_venta = 0.0;
+
+        for item in &venta.productos {
+            // 1. Buscamos si la categoría del producto tiene descuento en el sistema
+            let porc_desc_cat = self.descuentos_categorias.get(&item.producto.categoria).unwrap_or(&0.0);
+            
+            // 2. Calculamos el precio unitario con el descuento de categoría aplicado
+            let precio_con_desc_cat = item.producto.precio_base * (1.0 - (porc_desc_cat / 100.0));
+            
+            // 3. Acumulamos multiplicando por la cantidad
+            subtotal_venta += precio_con_desc_cat * (item.cantidad as f64);
         }
 
-    }
-    fn registrar_vendedor(&mut self,v: &Vendedor)->bool{
-        if self.vendedores.iter().find(|u| *u == v).is_some(){
-            return false;
+        // 4. Si el cliente tiene suscripción al newsletter, aplicamos el descuento general sobre el acumulado
+        if venta.cliente.tiene_newsletter() {
+            subtotal_venta *= 1.0 - (self.descuento_newsletter / 100.0);
         }
-        self.vendedores.push(v.clone());
-        return true;
+
+        subtotal_venta
     }
-    fn registrar_producto(&mut self,p: &Producto)->bool{
-        if self.productos.iter().find(|pr| *pr == p).is_some(){
-            return false;
-        }
-        self.productos.push(p.clone());
-        return true;
-    }
-    fn registrar_venta(&mut self,v:&Venta)->bool{
-        if self.vendedores.iter().find(|u| **u == v.vendedor).is_some(){
-            for pv in &v.productos {
-                if !self.productos.contains(&pv.0) {
-                    return false;
+
+    // ACCIÓN: Reporte para visualizar las ventas totales por categoría de producto
+    pub fn reporte_ventas_por_categoria(&self) -> HashMap<Categorias, f64> {
+        let mut reporte = HashMap::new();
+        
+        for venta in &self.ventas {
+            for item in &venta.productos {
+                let porc_desc_cat = self.descuentos_categorias.get(&item.producto.categoria).unwrap_or(&0.0);
+                let precio_final_unitario = item.producto.precio_base * (1.0 - (porc_desc_cat / 100.0));
+                let mut monto_item = precio_final_unitario * (item.cantidad as f64);
+                
+                // Si la venta global tuvo descuento por newsletter, impacta proporcionalmente al item
+                if venta.cliente.tiene_newsletter() {
+                    monto_item *= 1.0 - (self.descuento_newsletter / 100.0);
                 }
-            }
-            self.ventas.push(v.clone());
-            return true;
-        }else{
-            return false;
-        }
-    }
-    fn retornar_ventas_por_categoria(&self,categ:&Categorias)->Vec<Venta>{
-        let mut res : Vec<Venta> = Vec::new();
 
-        if !self.ventas.is_empty(){
-            for v in &self.ventas{
-                if let Some(v2) = v.retornar_venta_por_categoria(&categ){
-                    res.push(v2);
-                }
-            }
-        }
-
-        return res;
-    }
-    fn retornar_ventas_por_vendedor(&self,ve:&Vendedor)->Vec<Venta>{
-        let mut res : Vec<Venta> = Vec::new();
-
-        if !self.ventas.is_empty(){
-            for v in &self.ventas{
-                if v.get_vendedor() == *ve{
-                    res.push(v.clone());
-                }
+                let total_cat = reporte.entry(item.producto.categoria.clone()).or_insert(0.0);
+                *total_cat += monto_item;
             }
         }
+        reporte
+    }
 
-        return res;
-    }
-    fn monto_final_venta(&self,v:&Venta)->Option<f64>{
-        let mut res : Option<f64> = None;
-        if let Some(v2) = self.ventas.iter().find(|venta| venta.es_igual_a(&v)){
-            res = Some(v2.monto_total());
+    // ACCIÓN: Reporte para visualizar las ventas totales por vendedor (identificado por legajo)
+    pub fn reporte_ventas_por_vendedor(&self) -> HashMap<u64, f64> {
+        let mut reporte = HashMap::new();
+        
+        for venta in &self.ventas {
+            let monto_venta = self.calcular_precio_final(venta);
+            let total_vendedor = reporte.entry(venta.vendedor.legajo).or_insert(0.0);
+            *total_vendedor += monto_venta;
         }
-        return res;
-    }
-    fn otorgar_newsletter(&self,cli:&mut Cliente){
-        cli.asignar_newsletter(&self.newsletter);
+        reporte
     }
 }
+
+/*
+    CORREGIR CODIGO
+    +revisar metodo de aplicar porcentaje de los descuentos
+    +en como se verifican la existencia de los datos y la consulta de los mismos
+    +como se procesan los datos
+*/
 
 #[cfg(test)]
 mod test_ejercicio4{    
