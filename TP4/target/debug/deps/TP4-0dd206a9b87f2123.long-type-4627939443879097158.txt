@@ -1,0 +1,1 @@
+FlatMap<std::slice::Iter<'_, Venta>, (bool, Vec<ProductoVendido>), {closure@src/tp4/ej4.rs:190:37: 190:44}>

@@ -116,13 +116,13 @@ struct Venta {
 }
 
 impl Venta {
-    pub fn new(fecha: &str, cliente: &Cliente, vendedor: &Vendedor, medio_pago: MediosDePago, productos: Vec<ProductoVendido>) -> Venta {
+    pub fn new(fecha: &str, cliente: &Cliente, vendedor: &Vendedor, medio_pago: &MediosDePago, productos: &Vec<ProductoVendido>) -> Venta {
         Venta{
             fecha: fecha.to_string(),
             cliente: cliente.clone(),
             vendedor: vendedor.clone(),
-            medio_pago,
-            productos,
+            medio_pago: medio_pago.clone(),
+            productos: productos.clone(),
         }
     }
 }
@@ -131,7 +131,6 @@ impl Venta {
 struct Sistema {
     ventas: Vec<Venta>,
     vendedores : Vec<Vendedor>,
-    productos : Vec<Producto>,
     descuentos_categorias: HashMap<Categorias, f64>, // Lista de categorías con descuento
     newsletter : String,
     descuento_newsletter: f64,                      // Porcentaje general por newsletter
@@ -142,37 +141,58 @@ impl Sistema {
         Self {
             ventas: Vec::new(),
             vendedores : Vec::new(),
-            productos : Vec::new(),
             descuentos_categorias: HashMap::new(),
             newsletter: correo.to_string(),
             descuento_newsletter,
         }
     }
-
+    pub fn otorgar_newsletter(&self,c:&mut Cliente){
+        c.suscribir_newsletter(&self.newsletter.clone());
+    }
     pub fn configurar_descuento_categoria(&mut self, categoria: Categorias, porcentaje: f64) {
         self.descuentos_categorias.insert(categoria, porcentaje);
     }
 
-    pub fn registrar_venta(&mut self, venta: Venta) {
-        self.ventas.push(venta);
+    pub fn registrar_vendedor(&mut self,v:&Vendedor)->bool{
+        let mut exito = false;
+        
+        if !self.vendedores.iter().any(|vendedor| vendedor.legajo == v.legajo){
+            self.vendedores.push(v.clone());
+            exito = true;
+        }
+
+        return exito
     }
 
-    // ACCIÓN: Calcular el precio final de una venta aplicando las reglas correctamente
+    pub fn registrar_venta(&mut self, venta: &Venta)->bool{
+        let mut exito = false;
+        if self.vendedores.iter().any(|vendedor| vendedor.legajo == venta.vendedor.legajo){
+            self.ventas.push(venta.clone());
+            exito = true;
+        }
+        return exito
+    }
+
     pub fn calcular_precio_final(&self, venta: &Venta) -> f64 {
         let mut subtotal_venta = 0.0;
 
-        for item in &venta.productos {
-            // 1. Buscamos si la categoría del producto tiene descuento en el sistema
-            let porc_desc_cat = self.descuentos_categorias.get(&item.producto.categoria).unwrap_or(&0.0);
-            
-            // 2. Calculamos el precio unitario con el descuento de categoría aplicado
-            let precio_con_desc_cat = item.producto.precio_base * (1.0 - (porc_desc_cat / 100.0));
-            
-            // 3. Acumulamos multiplicando por la cantidad
-            subtotal_venta += precio_con_desc_cat * (item.cantidad as f64);
-        }
+        // Aplicacion de descuento para las categorias de cada producto
+        subtotal_venta = venta.productos.iter().map(|p|{
+            let descuento_categoria = if let Some(porcentaje) = self.descuentos_categorias.get(&p.producto.categoria){*porcentaje}else{0.0};
 
-        // 4. Si el cliente tiene suscripción al newsletter, aplicamos el descuento general sobre el acumulado
+            let precio_con_descuento = p.producto.precio_base * (1.0 - (descuento_categoria / 100.0));
+            
+            precio_con_descuento * (p.cantidad as f64)
+        }).sum();
+        /* 
+        for item in &venta.productos {
+            let descuento_categoria = if let Some(porcentaje) = self.descuentos_categorias.get(&item.producto.categoria){*porcentaje}else{0.0};
+
+            let precio_con_descuento = item.producto.precio_base * (1.0 - (descuento_categoria / 100.0));
+            
+            subtotal_venta += precio_con_descuento * (item.cantidad as f64);
+        }
+        */
         if venta.cliente.tiene_newsletter() {
             subtotal_venta *= 1.0 - (self.descuento_newsletter / 100.0);
         }
@@ -180,14 +200,30 @@ impl Sistema {
         subtotal_venta
     }
 
-    // ACCIÓN: Reporte para visualizar las ventas totales por categoría de producto
-    pub fn reporte_ventas_por_categoria(&self) -> HashMap<Categorias, f64> {
+    pub fn reporte_ventas_por_categoria(&self) -> Vec<(Categorias, f64)> {
         let mut reporte = HashMap::new();
         
+        self.ventas.iter().flat_map(|venta|{ 
+            let tiene_descuento = venta.cliente.tiene_newsletter();
+            venta.productos.iter().map(move|p|(tiene_descuento,p))
+        }).for_each(|(descuento_general,p)|{
+            let descuento_categoria = if let Some(porcentaje) = self.descuentos_categorias.get(&p.producto.categoria){*porcentaje}else{0.0};
+            let precio_final_unitario = p.producto.precio_base * (1.0 - (descuento_categoria / 100.0));
+            let mut monto_item = precio_final_unitario * (p.cantidad as f64);
+                
+            // Si la venta global tuvo descuento por newsletter, impacta proporcionalmente al item
+            if descuento_general {
+                monto_item *= 1.0 - (self.descuento_newsletter / 100.0);
+            }
+
+            let total_cat = reporte.entry(p.producto.categoria.clone()).or_insert(0.0);
+            *total_cat += monto_item;
+        });
+        /* 
         for venta in &self.ventas {
             for item in &venta.productos {
-                let porc_desc_cat = self.descuentos_categorias.get(&item.producto.categoria).unwrap_or(&0.0);
-                let precio_final_unitario = item.producto.precio_base * (1.0 - (porc_desc_cat / 100.0));
+                let descuento_categoria = if let Some(porcentaje) = self.descuentos_categorias.get(&item.producto.categoria){*porcentaje}else{0.0};
+                let precio_final_unitario = item.producto.precio_base * (1.0 - (descuento_categoria / 100.0));
                 let mut monto_item = precio_final_unitario * (item.cantidad as f64);
                 
                 // Si la venta global tuvo descuento por newsletter, impacta proporcionalmente al item
@@ -198,12 +234,14 @@ impl Sistema {
                 let total_cat = reporte.entry(item.producto.categoria.clone()).or_insert(0.0);
                 *total_cat += monto_item;
             }
-        }
-        reporte
+        }*/
+
+        let vector_reporte : Vec<(Categorias, f64)> = reporte.into_iter().collect();
+        return vector_reporte
     }
 
-    // ACCIÓN: Reporte para visualizar las ventas totales por vendedor (identificado por legajo)
-    pub fn reporte_ventas_por_vendedor(&self) -> HashMap<u64, f64> {
+    //Consultar por la forma de entrega del reporte (por vendedor o legajo)
+    pub fn reporte_ventas_por_vendedor(&self) -> Vec<(u64, f64)> {
         let mut reporte = HashMap::new();
         
         for venta in &self.ventas {
@@ -211,128 +249,69 @@ impl Sistema {
             let total_vendedor = reporte.entry(venta.vendedor.legajo).or_insert(0.0);
             *total_vendedor += monto_venta;
         }
-        reporte
+
+        let vector_reporte : Vec<(u64, f64)> = reporte.into_iter().collect();
+        return vector_reporte
     }
 }
 
-/*
-    CORREGIR CODIGO
-    +revisar metodo de aplicar porcentaje de los descuentos
-    +en como se verifican la existencia de los datos y la consulta de los mismos
-    +como se procesan los datos
-*/
-
 #[cfg(test)]
-mod test_ejercicio4{    
+mod test_ejercicio4{
     use super::*;
-    #[test]
-    fn operar_producto(){
-        let p = Producto::new(&"Shampoo".to_string(),&Categorias::default(),3500.0);
-        assert_eq!(p.obtener_precio_sin_descuento(),3500.0);
-        assert_eq!(p.obtener_precio_con_descuento(),3500.0);
-        assert!(p.categoria_igual_a(&Categorias::default()));
-        let p = Producto::new(&"Shampoo".to_string(),&Categorias::Limpieza(50.0),3500.0);
-        assert_eq!(p.obtener_precio_sin_descuento(),3500.0);
-        assert_eq!(p.obtener_precio_con_descuento(),1750.0);
-        assert!(p.categoria_igual_a(&Categorias::Limpieza(50.0)));
-    }
-
-    #[test]
-    fn validar_informacion(){
-        let cli1 = Cliente::new(&"Marcos".to_string(), &"Lupe".to_string(), &"Av1".to_string(), 124341);
-        let vendedor1 = Vendedor::new(&"Julieta".to_string(), &"Murias".to_string(), &"Cantilo".to_string(), 645634, 1234,1, 10000.0);
-        assert!(cli1.datos_cliente.validar_datos(&cli1.datos_cliente));
-        assert!(vendedor1.datos_vendedor.validar_datos(&vendedor1.datos_vendedor));
-        assert!(!cli1.datos_cliente.validar_datos(&vendedor1.datos_vendedor));
-        assert!(!vendedor1.datos_vendedor.validar_datos(&cli1.datos_cliente));
-    }
-
-    #[test]
-    fn operar_venta(){
-        //Personas
-        let cli1 = Cliente::new(&"Lucas".to_string(), &"Daniel".to_string(), &"AvBelgrano".to_string(), 871265);
-        let ven1 = Vendedor::new(&"Tobias".to_string(), &"Serio".to_string(), &"AvBelgrano".to_string(), 237863, 9876, 2, 12000.0);
-
-        //Productos registrados
-        let p1 = Producto::new(&"CocaCola".to_string(), &Categorias::Alimento(25.0), 3500.0);
-        let p2 = Producto::new(&"Escoba".to_string(), &Categorias::Limpieza(30.0), 1000.0);
-        let p3 = Producto::new(&"ElEjemplo".to_string(), &Categorias::Bazar(0.0), 1500.0);
-
-        //Generar ventas
-        let mut v1 = Venta::new(&Fecha::new(05, 02, 2025), &cli1, &ven1, &MediosDePago::Efectivo);
-        v1.agregar_producto(&ProductoVendido::new(&p1, 2));
-        v1.agregar_producto(&ProductoVendido::new(&p2, 1));
-        v1.agregar_producto(&ProductoVendido::new(&p3, 5));
-
-        //Retorno de monto total sin descuento (ya que cli1 no tiene newsletter)
-        assert_eq!(v1.monto_total(),15500.0);
-    }
-
-    #[test]
-    fn operar_sistema(){
-        //Sistema
-        let mut sis = Sistema::new(&CategPorcentajes(0.0, 60.0, 40.0, 0.0), &"correo@example.com".to_string());
-
-        //Personas
-        let cli1 = Cliente::new(&"Lucas".to_string(), &"Daniel".to_string(), &"AvBelgrano".to_string(), 871265);
-        let mut cli2 = Cliente::new(&"Mariana".to_string(), &"Santos".to_string(), &"Centenario".to_string(), 2987865);
-        //Otorga cli2 el newsletter por parte del sistema
-        sis.otorgar_newsletter(&mut cli2);
-        let ven1 = Vendedor::new(&"Tobias".to_string(), &"Serio".to_string(), &"AvBelgrano".to_string(), 237863, 9876, 2, 12000.0);
-
-        //Productos registrados
-        let p1 = Producto::new(&"CocaCola".to_string(), &sis.definir_categoria(&Categorias::Alimento(0.0)), 3500.0);
-        let p2 = Producto::new(&"Escoba".to_string(), &sis.definir_categoria(&Categorias::Limpieza(0.0)), 1000.0);
-        let p3 = Producto::new(&"ElEjemplo".to_string(), &Categorias::Bazar(0.0), 1500.0);
-
-        //Generar ventas
-        let mut v1 = Venta::new(&Fecha::new(05, 02, 2025), &cli1, &ven1, &MediosDePago::Efectivo);
-        v1.agregar_producto(&ProductoVendido::new(&p1, 2));
-        v1.agregar_producto(&ProductoVendido::new(&p2, 1));
-        v1.agregar_producto(&ProductoVendido::new(&p3, 5));
-
-        let mut v2 = Venta::new(&Fecha::new(15, 6, 2025), &cli2, &ven1, &MediosDePago::TarjetaDébito);
-        v2.agregar_producto(&ProductoVendido::new(&p1, 1));
-        v2.agregar_producto(&ProductoVendido::new(&p2, 2));
-        v2.agregar_producto(&ProductoVendido::new(&p3, 3));
+    
+    fn construir_sistema()->(Sistema,Vendedor){
+        let mut sistema = Sistema::new("bienestar@mail.com", 50.0);
         
-        let v3 = Venta::new(&Fecha::new(25, 8, 2025), &cli1, &ven1, &MediosDePago::TarjetaDébito);  //Sin productos y sin registrar en el sistema
+        let vendedor1 = Vendedor::new("Mariano","Sanchez", "Calle 123", 1234567, 891234, 1, 50000.0);
 
-        //Operar en el sistema
-        assert!(sis.registrar_vendedor(&ven1));
-        assert!(sis.registrar_producto(&p1));
-        assert!(sis.registrar_producto(&p2));
-        assert!(sis.registrar_producto(&p3));
+        sistema.configurar_descuento_categoria(Categorias::Alimento, 15.0);
+        sistema.configurar_descuento_categoria(Categorias::Limpieza, 10.0);
 
-        assert!(sis.registrar_venta(&v1));
-        assert!(sis.registrar_venta(&v2));
-
-
-        //Retorno de ventas por categorias
-        let res = sis.retornar_ventas_por_categoria(&sis.definir_categoria(&Categorias::Otro(0.0)));
-        assert!(res.is_empty());
-
-        let res = sis.retornar_ventas_por_categoria(&sis.definir_categoria(&Categorias::Alimento(0.0)));
-        assert!(!res.is_empty());
-
-        //Retorno de ventas por vendedor
-        let res = sis.retornar_ventas_por_vendedor(&ven1);
-        assert!(!res.is_empty());
-
-        let res = sis.retornar_ventas_por_vendedor(&Vendedor::new(&"Matias".to_string(), &"Serio".to_string(), &"AvBelgrano".to_string(), 237863, 9876, 2, 12000.0));
-        assert!(res.is_empty());
-
-        //Retorno monto final (sin descuento)
-        if let Some(monto) = sis.monto_final_venta(&v1){
-            assert_eq!(monto,15500.0);
-        }
-
-        //Retorno monto final (con descuento)
-        if let Some(monto) = sis.monto_final_venta(&v2){
-            assert_eq!(monto,9200.0);
-        }
-
-        //Retorno nulo de una venta no registrada
-        assert!(sis.monto_final_venta(&v3).is_none());
+        return (sistema,vendedor1)
     }
+
+    fn retornar_productos()->Vec<ProductoVendido>{
+        let mut lista = Vec::new();
+        
+        lista.push(ProductoVendido { producto: Producto::new("ASD", Categorias::Otro, 1000.0 ), cantidad: 5 });
+        lista.push(ProductoVendido { producto: Producto::new("Limpiecito", Categorias::Limpieza, 2000.0 ), cantidad: 2 });
+        lista.push(ProductoVendido { producto: Producto::new("MisterPapas", Categorias::Alimento, 5000.0 ), cantidad: 1 });
+        lista.push(ProductoVendido { producto: Producto::new("Coso", Categorias::Bazar, 500.0 ), cantidad: 2 });
+
+        return lista
+    }
+
+    #[test]
+    fn registro_vendedores(){
+        let mut muestra = construir_sistema();
+        let vendedor2 = Vendedor::new("Mariana","Sanchez", "Calle 123", 1234567, 891231, 1, 50000.0);
+        assert!(muestra.0.registrar_vendedor(&muestra.1));
+        assert!(muestra.0.registrar_vendedor(&vendedor2));
+        assert!(!muestra.0.registrar_vendedor(&vendedor2));
+    }
+
+    #[test]
+    fn registro_ventas(){
+        let mut muestra = construir_sistema();
+        let vendedor2 = Vendedor::new("Mariana","Sanchez", "Calle 123", 1234567, 891231, 1, 50000.0);
+        muestra.0.registrar_vendedor(&muestra.1);
+
+        let cli1 = Cliente::new("Juan","Golosito", "Av 5", 987123);
+
+        let v1 = Venta::new("1/5/26", &cli1, &muestra.1,&MediosDePago::Efectivo, &retornar_productos());
+
+        assert!(muestra.0.registrar_venta(&v1));
+        
+        let v2 = Venta::new("1/5/26", &cli1, &vendedor2,&MediosDePago::TransferenciaBancaria, &retornar_productos());
+        assert!(!muestra.0.registrar_venta(&v2));
+
+    }
+
+    //fn venta_sin_productos(){}
+    //fn venta_con_productos(){}
+    //fn venta_con_newsletter(){}
+
+    //fn reporte_sin_ventas(){}
+    //fn reporte_con_ventas(){}
+    
 }
