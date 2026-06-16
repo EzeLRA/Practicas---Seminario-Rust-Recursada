@@ -307,11 +307,85 @@ mod test_ejercicio4{
 
     }
 
-    //fn venta_sin_productos(){}
-    //fn venta_con_productos(){}
-    //fn venta_con_newsletter(){}
+    #[test]
+    fn venta_sin_productos(){
+        let mut muestra = construir_sistema();
 
-    //fn reporte_sin_ventas(){}
-    //fn reporte_con_ventas(){}
+        let cli1 = Cliente::new("Juan","Golosito", "Av 5", 987123);
+
+        let v1 = Venta::new("1/5/26", &cli1, &muestra.1,&MediosDePago::Efectivo, &Vec::new());
+
+        //Se tiene en cuenta que el sistema no concidera si la venta se registro en el sistema o no
+        //Por lo que puede calcular el monto de una venta recibida 
+
+        assert_eq!(muestra.0.calcular_precio_final(&v1),0.0);
+
+    }
+
+    #[test]
+    fn venta_con_productos(){
+        let mut muestra = construir_sistema();
+
+        let cli1 = Cliente::new("Juan","Golosito", "Av 5", 987123);
+
+        let v1 = Venta::new("1/5/26", &cli1, &muestra.1,&MediosDePago::Efectivo, &retornar_productos());
+
+        assert_eq!(muestra.0.calcular_precio_final(&v1),13850.0);
+
+    }
+
+    #[test]
+    fn venta_con_newsletter(){
+        let mut muestra = construir_sistema();
+
+        let mut cli1 = Cliente::new("Juan","Golosito", "Av 5", 987123);
+
+        muestra.0.otorgar_newsletter(&mut cli1);
+
+        let v1 = Venta::new("1/5/26", &cli1, &muestra.1,&MediosDePago::Efectivo, &retornar_productos());
+
+        assert_eq!(muestra.0.calcular_precio_final(&v1),6925.0);
+
+    }
+
+    #[test]
+    fn reporte_con_ventas(){
+        let mut muestra = construir_sistema();
+
+        let mut cli1 = Cliente::new("Damian","Goloso", "Av 5", 9823);
+        let mut cli2 = Cliente::new("Fabio","Bordon", "Av 5", 4823);
+
+        muestra.0.otorgar_newsletter(&mut cli1);
+
+        let productos_base = retornar_productos();
+
+        let l1 = productos_base[0..2].to_vec(); 
+        let l2 = productos_base[1..4].to_vec();
+        let l3 = productos_base.clone();
+
+        let v1 = Venta::new("1/5/26", &cli1, &muestra.1,&MediosDePago::Efectivo, &l1);
+        let v2 = Venta::new("1/5/26", &cli2, &muestra.1,&MediosDePago::Efectivo, &l2);
+        let v3 = Venta::new("1/5/26", &cli1, &muestra.1,&MediosDePago::Efectivo, &l3);
+
+        muestra.0.registrar_vendedor(&muestra.1);
+        muestra.0.registrar_venta(&v1);
+        muestra.0.registrar_venta(&v2);
+        muestra.0.registrar_venta(&v3);
+
+        assert_eq!(muestra.0.reporte_ventas_por_categoria().len(),4);
+        assert_eq!(muestra.0.reporte_ventas_por_vendedor().len(),1);
+        
+    }
+
+    #[test]
+    fn reporte_sin_ventas(){
+        let mut muestra = construir_sistema();
+
+        muestra.0.registrar_vendedor(&muestra.1);
+
+        assert_eq!(muestra.0.reporte_ventas_por_categoria().len(),0);
+        assert_eq!(muestra.0.reporte_ventas_por_vendedor().len(),0);
+        
+    }
     
 }
