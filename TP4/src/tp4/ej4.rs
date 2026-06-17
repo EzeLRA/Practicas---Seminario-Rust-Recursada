@@ -184,25 +184,17 @@ impl Sistema {
             
             precio_con_descuento * (p.cantidad as f64)
         }).sum();
-        /* 
-        for item in &venta.productos {
-            let descuento_categoria = if let Some(porcentaje) = self.descuentos_categorias.get(&item.producto.categoria){*porcentaje}else{0.0};
-
-            let precio_con_descuento = item.producto.precio_base * (1.0 - (descuento_categoria / 100.0));
-            
-            subtotal_venta += precio_con_descuento * (item.cantidad as f64);
-        }
-        */
+        
         if venta.cliente.tiene_newsletter() {
             subtotal_venta *= 1.0 - (self.descuento_newsletter / 100.0);
         }
 
-        subtotal_venta
+        return subtotal_venta
     }
 
     pub fn reporte_ventas_por_categoria(&self) -> Vec<(Categorias, f64)> {
         let mut reporte = HashMap::new();
-        
+        /* 
         self.ventas.iter().flat_map(|venta|{ 
             let tiene_descuento = venta.cliente.tiene_newsletter();
             venta.productos.iter().map(move|p|(tiene_descuento,p))
@@ -219,28 +211,29 @@ impl Sistema {
             let total_cat = reporte.entry(p.producto.categoria.clone()).or_insert(0.0);
             *total_cat += monto_item;
         });
-        /* 
-        for venta in &self.ventas {
-            for item in &venta.productos {
-                let descuento_categoria = if let Some(porcentaje) = self.descuentos_categorias.get(&item.producto.categoria){*porcentaje}else{0.0};
-                let precio_final_unitario = item.producto.precio_base * (1.0 - (descuento_categoria / 100.0));
-                let mut monto_item = precio_final_unitario * (item.cantidad as f64);
-                
+        */
+
+        self.ventas.iter().for_each(|v|{
+            let tiene_descuento = v.cliente.tiene_newsletter();
+            v.productos.iter().for_each(|p|{
+                let descuento_categoria = if let Some(porcentaje) = self.descuentos_categorias.get(&p.producto.categoria){*porcentaje}else{0.0};
+                let precio_final_unitario = p.producto.precio_base * (1.0 - (descuento_categoria / 100.0));
+                let mut monto_item = precio_final_unitario * (p.cantidad as f64);
+                    
                 // Si la venta global tuvo descuento por newsletter, impacta proporcionalmente al item
-                if venta.cliente.tiene_newsletter() {
+                if tiene_descuento {
                     monto_item *= 1.0 - (self.descuento_newsletter / 100.0);
                 }
 
-                let total_cat = reporte.entry(item.producto.categoria.clone()).or_insert(0.0);
+                let total_cat = reporte.entry(p.producto.categoria.clone()).or_insert(0.0);
                 *total_cat += monto_item;
-            }
-        }*/
+            });
+        });
 
         let vector_reporte : Vec<(Categorias, f64)> = reporte.into_iter().collect();
         return vector_reporte
     }
 
-    //Consultar por la forma de entrega del reporte (por vendedor o legajo)
     pub fn reporte_ventas_por_vendedor(&self) -> Vec<(u64, f64)> {
         let mut reporte = HashMap::new();
         
@@ -372,9 +365,19 @@ mod test_ejercicio4{
         muestra.0.registrar_venta(&v2);
         muestra.0.registrar_venta(&v3);
 
-        assert_eq!(muestra.0.reporte_ventas_por_categoria().len(),4);
-        assert_eq!(muestra.0.reporte_ventas_por_vendedor().len(),1);
+        let reporte1 = muestra.0.reporte_ventas_por_categoria();
+        assert_eq!(reporte1.len(),4);
+        //Evaluar un monto para una categoria
+        if let Some(categ) = reporte1.iter().find(|c| c.0 == Categorias::Limpieza){
+            assert_eq!(categ.1,7200.0);
+        }else{
+            panic!("No deberia de haber fallado");
+        }
         
+        //Evaluar el monto del vendedor
+        let reporte2 = muestra.0.reporte_ventas_por_vendedor();
+        assert_eq!(reporte2.len(),1);
+        assert_eq!(reporte2[0].1,20075.0);
     }
 
     #[test]
