@@ -127,6 +127,44 @@ impl Venta {
     }
 }
 
+#[derive(Debug)]
+struct ReporteCategoria{
+    categoria: Categorias,
+    monto_total: f64
+}
+
+impl ReporteCategoria{
+    pub fn new(categ:&Categorias,total:f64)->ReporteCategoria{
+        return ReporteCategoria { categoria: categ.clone(), monto_total: total }
+    }
+}
+
+#[derive(Debug)]
+struct ReporteVendedor{
+    legajo_v: u64,
+    monto_total : f64,
+}
+
+impl ReporteVendedor{
+    pub fn new(legajo:u64,total:f64)->ReporteVendedor{
+        return ReporteVendedor { legajo_v: legajo, monto_total: total }
+    }
+}
+
+#[derive(Debug)]
+struct Reporte<T>{
+    listado: Vec<T>
+}
+
+impl<T> Reporte<T>{
+    pub fn new()->Reporte<T>{
+        return Reporte { listado: Vec::new(), }
+    }
+    pub fn agregar(&mut self, item: T) {
+        self.listado.push(item);
+    }
+}
+
 // El sistema mantiene el registro de todo y contiene los datos necesarios
 struct Sistema {
     ventas: Vec<Venta>,
@@ -192,7 +230,7 @@ impl Sistema {
         return subtotal_venta
     }
 
-    pub fn reporte_ventas_por_categoria(&self) -> Vec<(Categorias, f64)> {
+    pub fn reporte_ventas_por_categoria(&self) -> Option<Reporte<ReporteCategoria>>{
         let mut reporte = HashMap::new();
         /* 
         self.ventas.iter().flat_map(|venta|{ 
@@ -230,11 +268,18 @@ impl Sistema {
             });
         });
 
-        let vector_reporte : Vec<(Categorias, f64)> = reporte.into_iter().collect();
-        return vector_reporte
+        if !reporte.is_empty(){
+            let mut res = Reporte::new();
+            reporte.iter().for_each(|r|{
+                res.agregar(ReporteCategoria::new(&r.0,*r.1));
+            });
+            return Some(res)
+        }
+
+        return None
     }
 
-    pub fn reporte_ventas_por_vendedor(&self) -> Vec<(u64, f64)> {
+    pub fn reporte_ventas_por_vendedor(&self) -> Option<Reporte<ReporteVendedor>> {
         let mut reporte = HashMap::new();
         
         for venta in &self.ventas {
@@ -243,8 +288,15 @@ impl Sistema {
             *total_vendedor += monto_venta;
         }
 
-        let vector_reporte : Vec<(u64, f64)> = reporte.into_iter().collect();
-        return vector_reporte
+        if !reporte.is_empty(){
+            let mut res = Reporte::new();
+            reporte.iter().for_each(|r|{
+                res.agregar(ReporteVendedor::new(*r.0, *r.1));
+            });
+            return Some(res)
+        }
+
+        return None
     }
 }
 
@@ -364,20 +416,28 @@ mod test_ejercicio4{
         muestra.0.registrar_venta(&v1);
         muestra.0.registrar_venta(&v2);
         muestra.0.registrar_venta(&v3);
-
-        let reporte1 = muestra.0.reporte_ventas_por_categoria();
-        assert_eq!(reporte1.len(),4);
-        //Evaluar un monto para una categoria
-        if let Some(categ) = reporte1.iter().find(|c| c.0 == Categorias::Limpieza){
-            assert_eq!(categ.1,7200.0);
+        
+        if let Some(reporte1) = muestra.0.reporte_ventas_por_categoria(){
+            assert_eq!(reporte1.listado.len(),4);
+            //Evaluar un monto para una categoria
+            if let Some(categ) = reporte1.listado.iter().find(|c| c.categoria == Categorias::Limpieza){
+                assert_eq!(categ.monto_total,7200.0);
+            }else{
+                panic!("No deberia de haber fallado");
+            }
         }else{
-            panic!("No deberia de haber fallado");
+            panic!("Se esperaba un informe");
+        }
+
+        if let Some(reporte2) = muestra.0.reporte_ventas_por_vendedor(){
+            //Evaluar el monto del vendedor y su legajo
+            assert_eq!(reporte2.listado.len(),1);
+            assert_eq!(reporte2.listado[0].legajo_v,891234);
+            assert_eq!(reporte2.listado[0].monto_total,20075.0);
+        }else{
+            panic!("Se esperaba un informe");
         }
         
-        //Evaluar el monto del vendedor
-        let reporte2 = muestra.0.reporte_ventas_por_vendedor();
-        assert_eq!(reporte2.len(),1);
-        assert_eq!(reporte2[0].1,20075.0);
     }
 
     #[test]
@@ -386,8 +446,8 @@ mod test_ejercicio4{
 
         muestra.0.registrar_vendedor(&muestra.1);
 
-        assert_eq!(muestra.0.reporte_ventas_por_categoria().len(),0);
-        assert_eq!(muestra.0.reporte_ventas_por_vendedor().len(),0);
+        assert!(muestra.0.reporte_ventas_por_categoria().is_none(),"No tendria que haber retornado algo");
+        assert!(muestra.0.reporte_ventas_por_vendedor().is_none(),"No tendria que haber retornado algo");
         
     }
     
