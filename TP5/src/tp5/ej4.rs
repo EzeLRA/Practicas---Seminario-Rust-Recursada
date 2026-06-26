@@ -14,14 +14,20 @@ use std::io;
 #[derive(Debug)]
 enum error_operatoria{
     Inexistente(String),
-    EstructuraVacia(String)
+    EstructuraVacia(String),
+    PrestamoActivo,
+    LimitePrestamos,
+    SinStock(String)
 }
 
 impl Display for error_operatoria{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self{
             error_operatoria::Inexistente(val) => write!(f, "No se encontro el elemento en la estructura {} ",val),
-            error_operatoria::EstructuraVacia(val) => write!(f, "La estrucutra {} no dispone de elementos ",val)
+            error_operatoria::EstructuraVacia(val) => write!(f, "La estrucutra {} no dispone de elementos ",val),
+            error_operatoria::PrestamoActivo => write!(f,"El usuario tiene un prestamo activo para el libro"),
+            error_operatoria::LimitePrestamos => write!(f,"El usuario excedio el limite de prestamos que puede solicitar"),
+            error_operatoria::SinStock(val) => write!(f,"No hay mas copias disponibles para el libro {}",val)
         }
     }
 }
@@ -546,8 +552,8 @@ impl Biblioteca {
         return existe
     }
 
-    pub fn prestar(&mut self,cliente:Cliente,libro:&Libro,vencimiento:Fecha) -> bool {
-        //Implementario errores para prestamos excedidos,prestamo activo,copias sin stock
+    pub fn prestar(&mut self,cliente:Cliente,libro:&Libro,vencimiento:Fecha) -> Result<(),Errores> {
+        /* 
         if (self.copias(&libro)>0) && (self.prestamos(&cliente)<5) && (!self.tiene_prestamo_del_libro(&cliente, &libro)) {
             self.prestamos.push(Prestamo::new(&libro.clone(), &cliente, &vencimiento));
             self.decrementar(&libro.clone());
@@ -555,6 +561,20 @@ impl Biblioteca {
         } else {
             return false
         }
+        */
+        if self.copias(&libro)>0 {
+            if self.prestamos(&cliente)<5 {
+                if !self.tiene_prestamo_del_libro(&cliente, &libro){
+                    self.prestamos.push(Prestamo::new(&libro.clone(), &cliente, &vencimiento));
+                    self.decrementar(&libro.clone());
+                    self.guardar_info_prestamos()?;
+                    return Ok(())
+                }
+                return Err(Errores::ErrorOperatoria(error_operatoria::PrestamoActivo))
+            }
+            return Err(Errores::ErrorOperatoria(error_operatoria::LimitePrestamos))
+        }
+        return Err(Errores::ErrorOperatoria(error_operatoria::SinStock(libro.get_titulo())))
     }
     
     //Parametro auxiliar de fecha para el calculo de proximidad
@@ -603,7 +623,8 @@ impl Biblioteca {
         return res
     }
 
-    fn devolver(&mut self,fecha_devolucion:&Fecha,libro:&Libro,cliente:&Cliente) {
+    fn devolver(&mut self,fecha_devolucion:&Fecha,libro:&Libro,cliente:&Cliente)->Result<(),Errores> {
+        /* 
         let mut pude = false;
         for prestamo in &mut self.prestamos {
             if prestamo.es_igual(&libro, &cliente) && prestamo.estado.es_igual_a(&Estado::EnPrestamo) {
@@ -614,6 +635,20 @@ impl Biblioteca {
             }
         }
         if pude {self.incrementar(&libro.clone());}
+        */
+        if !self.prestamos.is_empty(){
+            for prestamo in &mut self.prestamos {
+                if prestamo.es_igual(&libro, &cliente) && prestamo.estado.es_igual_a(&Estado::EnPrestamo) {
+                    prestamo.estado = Estado::Devuelto;
+                    prestamo.devolucion = Some(fecha_devolucion.clone());
+                    //Ya se guarda aqui
+                    self.incrementar(&libro.clone())?;
+                    return Ok(())
+                }
+            }
+            return Err(Errores::ErrorOperatoria(error_operatoria::Inexistente(self.get_nombre())))
+        }
+        return Err(Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(self.get_nombre())))
     }
 }
 
