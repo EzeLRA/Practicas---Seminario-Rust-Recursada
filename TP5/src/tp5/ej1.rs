@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, path};
 use serde::{Serialize, Deserialize};
 use serde_json;
 use std::{fs::File, io::{Error, Read, Write}};
@@ -11,7 +11,7 @@ use std::io;
 /*
 	Tipos de errores
 */
-#[derive(Debug)]
+#[derive(Debug,PartialEq)]
 enum error_baja{
 	Inexistente(String),
 	EstructuraVacia(String)
@@ -198,11 +198,19 @@ impl ConcesionarioAuto{
 	}
 	//Metodos primarios
 	pub fn new(nom:&String,dir:&String,cant:u32,path_in:&str)->ConcesionarioAuto{
+		let autos_lista : Vec<Auto> = match ConcesionarioAuto::recuperar_informacion(&path_in){
+			Ok(dato) => {
+                dato
+            }
+            Err(_) => {
+                Vec::new()
+            }
+		};
 		return ConcesionarioAuto{
 			nombre : nom.clone(),
 			direccion : dir.clone(),
 			capacidad : cant,
-			autos:Vec::new(),
+			autos: autos_lista,
 			path: path_in.to_string()
 		}
 	}
@@ -215,9 +223,10 @@ impl ConcesionarioAuto{
 		Ok(autos)
 	}
 	fn guardar_informacion(&self) -> Result<(), Errores> {
-	    let mut file = File::create(&self.path).map_err(Errores::ErrorIO)?;
-	    let serialized = serde_json::to_string(&self.autos).map_err(Errores::ErrorSerde)?;
-        file.write_all(serialized.as_bytes()).map_err(Errores::ErrorIO)
+	    let mut file = File::create(&self.path)?;
+	    let serialized = serde_json::to_string(&self.autos)?;
+        file.write_all(serialized.as_bytes())?;
+		return Ok(())
     }
 	//Agrega el auto recibido y no pueden existir repetidos dentro de la consecionaria
 	pub fn agregar_auto(&mut self,auto:Auto)->Result<(),Errores>{
@@ -330,35 +339,72 @@ mod testing_ejercicio1{
 		Concensionaria
 	*/
 
-	#[test]
-	fn creacion_consecionaria(){
-		let conse1 = ConcesionarioAuto::new(&"asd".to_string(),&"tryertw".to_string(),10,"");
-		assert_eq!(conse1.es_igual_a(&ConcesionarioAuto::new(&"asd".to_string(),&"tryertw".to_string(),10,"")),true);
+	fn crear_conjunto_autos()->Vec<Auto>{
+		let mut res = Vec::new();
+		let auto1 = Auto::new(&String::from("BMW"),&String::from("a234"),1995,100000.0,&Colores::Amarillo);
+		let auto2 = Auto::new(&String::from("Piolita"),&String::from("b321"),1999,100000.0,&Colores::Verde);
+		let auto3 = Auto::new(&String::from("Tesla"),&String::from("c521"),2020,1000000.0,&Colores::Negro);
+		let auto4 = Auto::new(&String::from("Tojota"),&String::from("f931"),2019,500000.0,&Colores::Rojo);
+		res.push(auto1);
+		res.push(auto2);
+		res.push(auto3);
+		res.push(auto4);
+		return res
 	}
 
-	/*	Replantear testings 
+	#[test]
+	fn creacion_consecionaria(){
+		let conse1 = ConcesionarioAuto::new(&"Conse1".to_string(),&"Av1".to_string(),4,"./lista_autos.json");
+		assert_eq!(conse1.es_igual_a(&ConcesionarioAuto::new(&"Conse1".to_string(),&"Av1".to_string(),4,"./lista_autos.json")),true);
+	}
+
+	//Crear consecionarias aparte para demostrar captura de rutas de archivo(dentro del test)
 	#[test]
 	fn operatoria_consecionaria(){
-		let a1 = Auto::new(&String::from("asdf"),&String::from("aytuiy"),2023,100432.0,&Colores::Rojo);
-		let a2 = Auto::new(&String::from("BMW"),&String::from("ajytjt"),2000,200500.0,&Colores::Verde);
-		let mut conse1 = ConcesionarioAuto::new(&"asd".to_string(),&"tryertw".to_string(),3);
-		//Limite de incersiones
-		assert_eq!(conse1.agregar_auto(a1.clone()),true);  //Se clona para probar la insercion sin repeticiones
-		assert_eq!(conse1.agregar_auto(a1.clone()),false);
-		assert_eq!(conse1.agregar_auto(a2),true);
-		//Borra auto "a1"
-		conse1.eliminar_auto(&a1);
+		let mut conse1 = ConcesionarioAuto::new(&"Conse1".to_string(),&"Av1".to_string(),4,"./lista_autos.json");
+		//Agregar autos
+		let autos = crear_conjunto_autos();
+		for a in autos{
+			assert!(conse1.agregar_auto(a).is_ok(),"Aqui no debio fallar");
+		}
+		//Intentar superar limite de espacio
+		let auto_nuevo = Auto::new(&String::from("Bicho"),&String::from("j221"),2020,1000000.0,&Colores::Negro);
+		match conse1.agregar_auto(auto_nuevo.clone()){
+			Ok(_) => panic!("Aqui debio fallar"),
+			Err(Errores::ErrorCapacidad(_)) => assert!(true),
+			Err(_) => panic!("Ocurrio un error fuera de lo previsto")
+		};
+		
+		//Intentar borrar un auto no agregado
+		match conse1.eliminar_auto(&auto_nuevo){
+			Ok(_) => panic!("Aqui debio fallar"),
+			Err(Errores::ErrorBaja(_)) => assert!(true),
+			Err(_) => panic!("Ocurrio un error fuera de lo previsto")
+		};
+		//Eliminar todos los autos
+		let autos = crear_conjunto_autos();
+		for a in autos{
+			assert!(conse1.eliminar_auto(&a).is_ok(),"Aqui no debio fallar");
+		}
+		//Intentar borrar un auto en una lista vacia
+		match conse1.eliminar_auto(&auto_nuevo){
+			Ok(_) => panic!("Aqui debio fallar"),
+			Err(Errores::ErrorBaja(_)) => assert!(true),
+			Err(_) => panic!("Ocurrio un error fuera de lo previsto")
+		};
 
-		let a3 = Auto::new(&String::from("BMW"),&String::from("ajytjt"),2000,200500.0,&Colores::Verde);
-		//Busqueda de auto "a2" con uno similar
-		if let Some(a) = conse1.buscar_auto(&a3){
-			assert_eq!(a.es_igual_a(&a3),true);
+		//Agregar y buscar un nuevo auto
+		let auto_nuevo = Auto::new(&String::from("Bichito"),&String::from("j221"),2020,1000000.0,&Colores::Negro);
+		assert!(conse1.agregar_auto(auto_nuevo.clone()).is_ok(),"Aqui no debio fallar");
+
+		if let Some(a) = conse1.buscar_auto(&auto_nuevo){
+			assert_eq!(a.es_igual_a(&auto_nuevo),true);
 		}else{
 			panic!("Aqui no tendria que haber fallado");
 		}
 
-		//Busqueda de auto "a1"(ya no lo dispone y no existe otro en la estructura)
-		assert_eq!(conse1.buscar_auto(&a1).is_none(),true);
+		assert!(conse1.eliminar_auto(&auto_nuevo).is_ok(),"Aqui no debio fallar");
+		assert_eq!(conse1.buscar_auto(&auto_nuevo).is_none(),true);
 	}
-	*/
+
 }
