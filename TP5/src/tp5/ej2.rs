@@ -12,7 +12,7 @@ use std::io;
 	Tipos de errores
 */
 #[derive(Debug)]
-pub enum error_operatoria{
+enum error_operatoria{
     SinDesplazamiento(String),
 	Inexistente(String),
 	EstructuraVacia(String)
@@ -29,7 +29,7 @@ impl Display for error_operatoria{
 }
 
 #[derive(Debug)]
-pub enum Errores{
+enum Errores{
 	ErrorOperatoria(error_operatoria),
 	ErrorIO(io::Error),
 	ErrorSerde(serde_json::Error)
@@ -151,10 +151,18 @@ impl PlayList{
     }
     //Metodos primarios
     pub fn new(nom:&String,path_in:&str)->PlayList{
-        return PlayList { nombre: nom.to_string(), canciones: Vec::new() , path: path_in.to_string() }
+        let list_canciones : Vec<Cancion> = match PlayList::recuperar_informacion(&path_in){
+			Ok(dato) => {
+                dato
+            }
+            Err(_) => {
+                Vec::new()
+            }
+		};
+        return PlayList { nombre: nom.to_string(), canciones: list_canciones , path: path_in.to_string() }
     }
-    pub fn agregar_cancion(&mut self,c:&Cancion)->Result<(),Errores>{
-        self.canciones.push(c.clone());
+    pub fn agregar_cancion(&mut self,c:Cancion)->Result<(),Errores>{
+        self.canciones.push(c);
         self.guardar_informacion()?;
         return Ok(())
     }
@@ -195,10 +203,10 @@ impl PlayList{
         }
         return Err(Errores::ErrorOperatoria(error_operatoria::SinDesplazamiento(self.get_nombre())))
     }
-    pub fn buscar_cancion(&self,nom:&String)->Option<Cancion>{
-		let mut res : Option<Cancion> = None;
+    pub fn buscar_cancion(&self,nom:&String)->Option<&Cancion>{
+		let mut res : Option<&Cancion> = None;
 		if !self.canciones.is_empty() {
-			for cancion in self.canciones.clone(){
+			for cancion in &self.canciones{
 				if cancion.get_titulo() == *nom {
 					res = Some(cancion);
                     break;
@@ -207,29 +215,33 @@ impl PlayList{
 		}
 		return res;
 	}
-    pub fn canciones_genero(&self,gen_in:&Generos)->Vec<Cancion>{
-        let mut res : Vec<Cancion> = Vec::new();
+    pub fn canciones_genero(&self,gen_in:&Generos)->Result<(Vec<&Cancion>),Errores>{
+        
         if !self.canciones.is_empty() {
-            for cancion in self.canciones.clone(){
+            let mut res = Vec::new();
+            for cancion in &self.canciones{
                 if cancion.genero.es_igual_a(gen_in) {
                     res.push(cancion);
                     
                 }
             }
+            return Ok(res)
         }
-        return res;
+        return Err(Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(self.get_nombre())));
     }
-    pub fn canciones_artista(&self,nom:&String)->Vec<Cancion>{
-        let mut res : Vec<Cancion> = Vec::new();
+    pub fn canciones_artista(&self,nom:&String)->Result<(Vec<&Cancion>),Errores>{
+        
         if !self.canciones.is_empty() {
-            for cancion in self.canciones.clone(){
+            let mut res = Vec::new();
+            for cancion in &self.canciones{
                 if cancion.get_artista() == *nom {
                     res.push(cancion);
                     
                 }
             }
+            return Ok(res)
         }
-        return res;
+        return Err(Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(self.get_nombre())));
     }
     pub fn modificar_titulo(&mut self,nom_nuevo:&String){
         self.nombre = nom_nuevo.to_string();
@@ -257,10 +269,10 @@ mod testing_ejercicio8{
     }
     #[test]
     fn operatoria_canciones(){
-        let mut p = PlayList::new(&"asd".to_string(),"");
+        let mut p = PlayList::new(&"asd".to_string(),"./lista_canciones.json");
         let c = Cancion::new(&String::from("pepe"), &String::from("pepito"), &Generos::Rap);
-        p.agregar_cancion(&c);
-        p.agregar_cancion(&c);
+        assert!(p.agregar_cancion(c.clone()).is_ok());
+        assert!(p.agregar_cancion(c.clone()).is_ok());
         if let Some(aux) = p.buscar_cancion(&"pepe".to_string()){
             assert_eq!(aux.es_igual_a(&c),true);
         }else{
@@ -268,52 +280,81 @@ mod testing_ejercicio8{
         }
 
         let c2 = Cancion::new(&String::from("pepo"), &String::from("pepe"), &Generos::Rap);
-        p.agregar_cancion(&c2);
-        p.mover_cancion(&c2,0);
+        assert!(p.agregar_cancion(c2.clone()).is_ok());
+        assert!(p.mover_cancion(&c2,0).is_ok());
         if let Some(aux) = p.canciones.get(0){
             assert_eq!(aux.es_igual_a(&c2),true);
         }else{
             panic!("No existe esa cancion");
         }
 
-        p.eliminar_canciones();
+        assert!(p.eliminar_canciones().is_ok());
         assert_eq!(p.canciones.is_empty(),true);
     }
     #[test]
     fn listado_canciones(){
-        let mut p = PlayList::new(&"asd".to_string(),"");
+        let mut p = PlayList::new(&"asd".to_string(),"./lista_canciones.json");
         let c1 = Cancion::new(&String::from("pepe"), &String::from("pepito"), &Generos::Rap);
         let c4 = Cancion::new(&String::from("pepesito"), &String::from("pepito"), &Generos::Jazz);
         let c2 = Cancion::new(&String::from("donPepe"), &String::from("donPepito"), &Generos::Rap);
         let c3 = Cancion::new(&String::from("qwe"), &String::from("Qwe"), &Generos::Rock);
-        p.agregar_cancion(&c1);
-        p.agregar_cancion(&c2);
-        p.agregar_cancion(&c1);
-        p.agregar_cancion(&c3);
-        p.agregar_cancion(&c3);
-        p.agregar_cancion(&c4);
+        assert!(p.agregar_cancion(c1.clone()).is_ok());
+        assert!(p.agregar_cancion(c2).is_ok());
+        assert!(p.agregar_cancion(c1).is_ok());
+        assert!(p.agregar_cancion(c3.clone()).is_ok());
+        assert!(p.agregar_cancion(c3).is_ok());
+        assert!(p.agregar_cancion(c4).is_ok());
 
         //Listados
-        let lista1 = p.canciones_genero(&Generos::Rap);
+        assert!(p.canciones_genero(&Generos::Rap).is_ok_and(|l|{
+            assert_eq!(l.len(),3);
+            l.iter().all(|c| c.genero.es_igual_a(&Generos::Rap))
+        }));
         
-        if !lista1.is_empty(){
-            assert_eq!(lista1.len(),3);
-            for cancion in lista1{
-                assert_eq!(cancion.genero.es_igual_a(&Generos::Rap),true);
-            }
-        }else{
-            panic!("Lista 1 no generada");
-        }
+        assert!(p.canciones_artista(&"pepito".to_string()).is_ok_and(|l|{
+            assert_eq!(l.len(),3);
+            l.iter().all(|c| c.get_artista() == "pepito".to_string())
+        }));
 
-        let lista2 = p.canciones_artista(&"pepito".to_string());
+        assert!(p.eliminar_canciones().is_ok());
 
-        if !lista2.is_empty(){
-            assert_eq!(lista2.len(),3);
-            for cancion in lista2{
-                assert_eq!(cancion.get_artista() == "pepito".to_string(),true);
-            }
-        }else{
-            panic!("Lista 2 no generada");
-        }
+        assert!(p.canciones_genero(&Generos::Rock).is_err_and(|e| matches!(e,Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(_)))));
+        assert!(p.canciones_artista(&"Joaco".to_string()).is_err_and(|e| matches!(e,Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(_)))));
     }
+
+    /*
+		Casos especiales para la cobertura de coverage
+	*/
+	#[test]
+	fn caso_especial_error_io() {
+		// Se buscara forzar un ErrorIO usando una ruta cuyo directorio base NO EXISTE
+		let path_imposible = "./carpeta_inexistente_123/x.json";
+
+		let mut p = PlayList::new(&"asd".to_string(),path_imposible);
+        let c1 = Cancion::new(&String::from("pepe"), &String::from("pepito"), &Generos::Rap);
+        
+		// Al intentar agregar el elemento, llamará internamente a File::create() en la ruta rota, provocando un ErrorIO
+		assert!(p.agregar_cancion(c1).is_err_and(|e|{
+			assert!(!e.to_string().is_empty());
+			matches!(e, Errores::ErrorIO(_))
+		}),"Aquí debió fallar");
+	}
+
+	#[test]
+	fn caso_especial_error_serde() {
+		let path_err = "./corrupto.json";
+		
+		// Se fuerza la escritura en el contenido temporal que NO cumple con el formato estructurado de un .JSON válido
+		assert!(std::fs::write(path_err, "{ &&5435#$#$&42365_XXXX1234 : [::: ").is_ok(),"No debio fallar aqui");
+
+		// Se invoca directamente el método para leer el archivo del path que buscara
+
+		assert!(PlayList::recuperar_informacion(path_err).is_err_and(|e|{
+			assert!(!e.to_string().is_empty());
+			matches!(e, Errores::ErrorSerde(_))
+		}),"Aquí debió fallar");
+
+		assert!(std::fs::remove_file(path_err).is_ok(),"Error fuera de lo previsto");
+		
+	}
 }

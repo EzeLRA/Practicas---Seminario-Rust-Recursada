@@ -358,7 +358,6 @@ mod testing_ejercicio1{
 		assert_eq!(conse1.es_igual_a(&ConcesionarioAuto::new(&"Conse1".to_string(),&"Av1".to_string(),4,"./lista_autos.json")),true);
 	}
 
-	//Crear consecionarias aparte para demostrar captura de rutas de archivo(dentro del test)
 	#[test]
 	fn operatoria_consecionaria(){
 		let mut conse1 = ConcesionarioAuto::new(&"Conse1".to_string(),&"Av1".to_string(),4,"./lista_autos.json");
@@ -367,44 +366,82 @@ mod testing_ejercicio1{
 		for a in autos{
 			assert!(conse1.agregar_auto(a).is_ok(),"Aqui no debio fallar");
 		}
+
 		//Intentar superar limite de espacio
 		let auto_nuevo = Auto::new(&String::from("Bicho"),&String::from("j221"),2020,1000000.0,&Colores::Negro);
-		match conse1.agregar_auto(auto_nuevo.clone()){
-			Ok(_) => panic!("Aqui debio fallar"),
-			Err(Errores::ErrorCapacidad(_)) => assert!(true),
-			Err(_) => panic!("Ocurrio un error fuera de lo previsto")
-		};
+		assert!(conse1.agregar_auto(auto_nuevo.clone()).is_err_and(|e|{
+			//Validar mensaje no nulo
+			assert!(!e.to_string().is_empty());
+			matches!(e,Errores::ErrorCapacidad(_))
+		}),"Aquí debió fallar por superar la capacidad");
 		
 		//Intentar borrar un auto no agregado
-		match conse1.eliminar_auto(&auto_nuevo){
-			Ok(_) => panic!("Aqui debio fallar"),
-			Err(Errores::ErrorBaja(_)) => assert!(true),
-			Err(_) => panic!("Ocurrio un error fuera de lo previsto")
-		};
+		assert!(conse1.eliminar_auto(&auto_nuevo).is_err_and(|e|{
+			//Validar mensaje no nulo
+			assert!(!e.to_string().is_empty());
+			matches!(e, Errores::ErrorBaja(_))
+		}),"Aquí debió fallar el eliminar un auto inexistente");
+
+		//Continuar las operaciones con otra consecionaria 
+		//(Demostracion de persistencia - traslado de datos a otra instancia en caso de "cambio")
+		let mut conse2 = ConcesionarioAuto::new(&"Conse2".to_string(),&"Av2".to_string(),4,"./lista_autos.json");
+
 		//Eliminar todos los autos
 		let autos = crear_conjunto_autos();
 		for a in autos{
-			assert!(conse1.eliminar_auto(&a).is_ok(),"Aqui no debio fallar");
+			assert!(conse2.eliminar_auto(&a).is_ok(),"Aqui no debio fallar");
 		}
 		//Intentar borrar un auto en una lista vacia
-		match conse1.eliminar_auto(&auto_nuevo){
-			Ok(_) => panic!("Aqui debio fallar"),
-			Err(Errores::ErrorBaja(_)) => assert!(true),
-			Err(_) => panic!("Ocurrio un error fuera de lo previsto")
-		};
+		assert!(conse2.eliminar_auto(&auto_nuevo).is_err_and(|e| matches!(e, Errores::ErrorBaja(_))),"Aquí debió fallar el eliminar un auto en una estructura vacia");
 
 		//Agregar y buscar un nuevo auto
 		let auto_nuevo = Auto::new(&String::from("Bichito"),&String::from("j221"),2020,1000000.0,&Colores::Negro);
-		assert!(conse1.agregar_auto(auto_nuevo.clone()).is_ok(),"Aqui no debio fallar");
+		assert!(conse2.agregar_auto(auto_nuevo.clone()).is_ok(),"Aqui no debio fallar");
 
-		if let Some(a) = conse1.buscar_auto(&auto_nuevo){
+		if let Some(a) = conse2.buscar_auto(&auto_nuevo){
 			assert_eq!(a.es_igual_a(&auto_nuevo),true);
 		}else{
 			panic!("Aqui no tendria que haber fallado");
 		}
 
-		assert!(conse1.eliminar_auto(&auto_nuevo).is_ok(),"Aqui no debio fallar");
-		assert_eq!(conse1.buscar_auto(&auto_nuevo).is_none(),true);
+		assert!(conse2.eliminar_auto(&auto_nuevo).is_ok(),"Aqui no debio fallar");
+		assert_eq!(conse2.buscar_auto(&auto_nuevo).is_none(),true);
+	}
+
+	/*
+		Casos especiales para la cobertura de coverage
+	*/
+	#[test]
+	fn caso_especial_error_io() {
+		// Se buscara forzar un ErrorIO usando una ruta cuyo directorio base NO EXISTE
+		let path_imposible = "./carpeta_inexistente_123/autos.json";
+
+		let mut conse = ConcesionarioAuto::new(&"ConseBackRoom".to_string(), &"Av 67".to_string(), 5, path_imposible);
+		let auto = Auto::new(&"Ford".to_string(), &"Ka".to_string(), 2015, 60000.0, &Colores::Verde);
+
+		// Al intentar agregar el auto, llamará internamente a File::create() en la ruta rota, provocando un ErrorIO
+		assert!(conse.agregar_auto(auto).is_err_and(|e|{
+			assert!(!e.to_string().is_empty());
+			matches!(e, Errores::ErrorIO(_))
+		}),"Aquí debió fallar");
+	}
+
+	#[test]
+	fn caso_especial_error_serde() {
+		let path_err = "./corrupto.json";
+		
+		// Se fuerza la escritura en el contenido temporal que NO cumple con el formato estructurado de un .JSON válido
+		assert!(std::fs::write(path_err, "{ &&5435#$#$&42365_XXXX1234 : [::: ").is_ok(),"No debio fallar aqui");
+
+		// Se invoca directamente el método para leer el archivo del path que buscara
+
+		assert!(ConcesionarioAuto::recuperar_informacion(path_err).is_err_and(|e|{
+			assert!(!e.to_string().is_empty());
+			matches!(e, Errores::ErrorSerde(_))
+		}),"Aquí debió fallar");
+
+		assert!(std::fs::remove_file(path_err).is_ok(),"Error fuera de lo previsto");
+		
 	}
 
 }

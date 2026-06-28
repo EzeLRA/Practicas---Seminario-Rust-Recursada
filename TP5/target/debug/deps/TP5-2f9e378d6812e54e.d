@@ -1,0 +1,7 @@
+/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP5/target/debug/deps/TP5-2f9e378d6812e54e.d: src/main.rs src/tp5/mod.rs src/tp5/ej1.rs
+
+/home/e_248m/Documents/Programas/Programas Rust/Practicas---Seminario-Rust-Recursada/TP5/target/debug/deps/TP5-2f9e378d6812e54e: src/main.rs src/tp5/mod.rs src/tp5/ej1.rs
+
+src/main.rs:
+src/tp5/mod.rs:
+src/tp5/ej1.rs:
