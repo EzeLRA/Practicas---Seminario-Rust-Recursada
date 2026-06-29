@@ -440,20 +440,28 @@ impl Veterinaria{
     }
     //Metodos primarios
     pub fn new(nom_in:&String,dir_in:&String,id_in:u32,path_in:&str)->Veterinaria{
+        let atenciones : Vec<Atencion> = match Veterinaria::recuperar_informacion(path_in){
+            Ok(dato) => {
+                dato
+            }
+            Err(_) => {
+                Vec::new()
+            }
+        };
         return Veterinaria{
             nombre : nom_in.clone(),
             direccion : dir_in.clone(),
             id : id_in,
             cola_atencion : VecDeque::new(),
-            atenciones_realizadas : Vec::new(),
+            atenciones_realizadas : atenciones,
             path: path_in.to_string()
         }
     }
-    pub fn agregar_mascota(&mut self,m:&Mascota){
-        self.cola_atencion.push_back(m.clone());
+    pub fn agregar_mascota(&mut self,m:Mascota){
+        self.cola_atencion.push_back(m);
     }   
-    pub fn priorizar_mascota(&mut self,m:&Mascota){
-        self.cola_atencion.push_front(m.clone());
+    pub fn priorizar_mascota(&mut self,m:Mascota){
+        self.cola_atencion.push_front(m);
     }
     pub fn atender_mascota(&mut self)->Option<Mascota>{
         if self.cola_atencion.is_empty() {
@@ -472,19 +480,17 @@ impl Veterinaria{
             }
         }
     }
-    pub fn registrar_atencion(&mut self,a:&Atencion)->Result<(), Errores>{
-        self.atenciones_realizadas.push(a.clone());
+    pub fn registrar_atencion(&mut self,a:Atencion)->Result<(), Errores>{
+        self.atenciones_realizadas.push(a);
         self.guardar_informacion()?;
         return Ok(())
     }
-    pub fn buscar_atencion(&self,nom_mascota:&String,nom_duenio:&String,tel:u32)->Option<Atencion>{
-        let mut res : Option<Atencion> = None;
+    pub fn buscar_atencion(&self,nom_mascota:&String,nom_duenio:&String,tel:u32)->Option<&Atencion>{
+        let mut res : Option<&Atencion> = None;
         if !self.atenciones_realizadas.is_empty(){
-            let mut atenciones = self.atenciones_realizadas.clone();
-            atenciones.reverse();
-            for ate in atenciones{
-                if ate.datos_iguales_a(&nom_mascota,&nom_duenio, tel){
-                    res = Some(ate);
+            for i in (0..self.atenciones_realizadas.len()).rev(){
+                if self.atenciones_realizadas[i].datos_iguales_a(&nom_mascota,&nom_duenio, tel){
+                    res = Some(&self.atenciones_realizadas[i]);
                     break;
                 }
             }
@@ -537,100 +543,135 @@ mod testing_ejercicio9{
 
     #[test]
     fn creacion_veterinaria(){
-        let v = Veterinaria::new(&"mordidas".to_string(),&"av1".to_string(),1);
-        let v2 = Veterinaria::new(&"mordidas".to_string(),&"av1".to_string(),1);
+        let v = Veterinaria::new(&"mordidas".to_string(),&"av1".to_string(),1,"./lista_atenciones.json");
+        let v2 = Veterinaria::new(&"mordidas".to_string(),&"av1".to_string(),1,"./lista_atenciones.json");
         assert_eq!(v.es_igual_a(&v2),true);
     }
 
     #[test]
     fn operatoria_mascotas(){
-        let mut v = Veterinaria::new(&"mordidas".to_string(),&"av1".to_string(),1);
+        let mut v = Veterinaria::new(&"mordidas".to_string(),&"av1".to_string(),1,"./lista_atenciones");
         let d1 = Duenio::new(&"Marcos".to_string(),&"av2".to_string(),1234);
         let animal1 = Mascota::new(&String::from("Luchito"), 2, &Animales::Perro, &d1);
-        v.agregar_mascota(&animal1);
-        v.agregar_mascota(&animal1);
+        v.agregar_mascota(animal1);
 
         let animal2 = Mascota::new(&String::from("Piecitos"), 1, &Animales::Gato, &d1);
-        v.priorizar_mascota(&animal2);
+        v.priorizar_mascota(animal2);
 
         //Atendiende un gato
-        if let Some(ani) = v.atender_mascota(){
-            assert_eq!(ani.es_igual_a(&animal2),true);
-        }else{
-            panic!("No se encontro el animal");
-        }
+        assert!(v.atender_mascota().is_some_and(|ani|{
+            ani.es_igual_a(&Mascota::new(&String::from("Piecitos"), 1, &Animales::Gato, &d1))
+        }),"No se encontro al animal");
 
         //Atendiende un perro
-        if let Some(ani) = v.atender_mascota(){
-            assert_eq!(ani.es_igual_a(&animal1),true);
-        }else{
-            panic!("No se encontro el animal");
-        }
+        assert!(v.atender_mascota().is_some_and(|ani|{
+            ani.es_igual_a(&Mascota::new(&String::from("Luchito"), 2, &Animales::Perro, &d1))
+        }),"No se encontro al animal");
 
-        //Borra el perro repetido(del anterior)
-        v.eliminar_mascota(&animal1);
+        //Borra una mascota
+        let animal3 = Mascota::new(&String::from("Luchis"), 2, &Animales::Perro, &d1);
+        v.agregar_mascota(animal3.clone());
+        v.eliminar_mascota(&animal3);
         assert_eq!(v.atender_mascota().is_none(),true);
     }
 
     #[test]
     fn operar_atenciones(){
-        let mut v = Veterinaria::new(&"mordidas".to_string(),&"av1".to_string(),1);
+        let mut v = Veterinaria::new(&"mordidas".to_string(),&"av1".to_string(),1,"./lista_atenciones.json");
         let d1 = Duenio::new(&"Marcos".to_string(),&"av2".to_string(),1234);
         let animal1 = Mascota::new(&String::from("Luchito"), 2, &Animales::Perro, &d1);
-        v.agregar_mascota(&animal1);
-        v.agregar_mascota(&animal1);
+        let animal2 = Mascota::new(&String::from("Luchon"), 2, &Animales::Perro, &d1);
+        v.agregar_mascota(animal1);
+        v.agregar_mascota(animal2);
 
-        let mut ate1 : Atencion;
-        let mut ate2 : Atencion;
         //Primera recepcion
-        if let Some(ani) = v.atender_mascota(){
-            ate1 = Atencion::new(&ani,&"Pulgas".to_string(),&"Pipeta".to_string(),&None);
-            v.registrar_atencion(&ate1);
-        }else{
-            panic!("No se atendio a ningun animal");
-        }
+        assert!(v.atender_mascota().is_some_and(|ani|{
+            let ate1 = Atencion::new(&ani,&"Pulgas".to_string(),&"Pipeta".to_string(),&None);
+            v.registrar_atencion(ate1).is_ok()
+        }),"No se atendio ningun animal");
 
         //Segunda recepcion
-        if let Some(ani) = v.atender_mascota(){
-            ate2 = Atencion::new(&ani,&"Garrapatas".to_string(),&"Pipeta".to_string(),&Some(Fecha::new(5,5,2025)));
-            v.registrar_atencion(&ate2);
-        }else{
-            panic!("No se atendio a ningun animal");
-        }
+        assert!(v.atender_mascota().is_some_and(|ani|{
+            let ate2 = Atencion::new(&ani,&"Garrapatas".to_string(),&"Pipeta".to_string(),&None);
+            v.registrar_atencion(ate2).is_ok()
+        }),"No se atendio ningun animal");
         
-        //Busqueda y eliminacion de la ultima atencion
-        if let Some(ate_actual) = v.buscar_atencion(&"Luchito".to_string(),&"Marcos".to_string(),1234){
-            assert_eq!(ate_actual.es_igual_a(&ate2),true);
-            v.eliminar_atencion(&ate2);
-        }else{
-            panic!("No se encontro tal recepcion");
-        }
-    
-        //Busqueda de la primer atencion(la unica que queda en el registro)
-        if let Some(ate_actual) = v.buscar_atencion(&"Luchito".to_string(),&"Marcos".to_string(),1234){
-            assert_eq!(ate_actual.es_igual_a(&ate1),true);
-            v.modificar_diagnostico(&ate_actual, &"Vomitos".to_string()); //ate1
-        }else{
-            panic!("No se encontro tal recepcion");
-        }
+        //Búsqueda y eliminación de la última atención
+        let atencion = v.buscar_atencion(&"Luchon".to_string(), &"Marcos".to_string(), 1234).cloned();
+        assert!(atencion.is_some_and(|a| {
+            assert!(a.mascota.nombre == "Luchon");
+            v.eliminar_atencion(&a).is_ok() 
+        }), "No se encontro tal recepcion");
 
+        //Búsqueda de la primer atención y modificación de diagnóstico
+        let atencion = v.buscar_atencion(&"Luchito".to_string(), &"Marcos".to_string(), 1234).cloned();
+        assert!(atencion.is_some_and(|a| {
+            assert!(a.mascota.get_nombre() == "Luchito");
+            v.modificar_diagnostico(&a, &"Vomitos".to_string()).is_ok()
+        }), "No se encontro tal recepcion");
 
-        //Busqueda de atencion y modificacion de fecha
-        if let Some(ate_actual) = v.buscar_atencion(&"Luchito".to_string(),&"Marcos".to_string(),1234){
-            ate1 = Atencion::new(&animal1,&"Vomitos".to_string(),&"Pipeta".to_string(),&None);
-            assert_eq!(ate_actual.es_igual_a(&ate1),true);
-            v.modificar_fecha(&ate_actual,&Some(Fecha::new(5,5,2025)));
-        }else{
-            panic!("No se encontro tal recepcion");
-        }
+        //Búsqueda de atención y modificación de fecha
+        let atencion = v.buscar_atencion(&"Luchito".to_string(), &"Marcos".to_string(), 1234).cloned();
+        assert!(atencion.is_some_and(|a| {
+            assert!(a.mascota.get_nombre() == "Luchito");
+            v.modificar_fecha(&a, &Some(Fecha::new(5, 5, 2025))).is_ok()
+        }), "No se encontro tal recepcion");
 
         //Busqueda de atencion modificada 
-        if let Some(ate_actual) = v.buscar_atencion(&"Luchito".to_string(),&"Marcos".to_string(),1234){
-            ate1 = Atencion::new(&animal1,&"Vomitos".to_string(),&"Pipeta".to_string(),&Some(Fecha::new(5,5,2025)) );
-            assert_eq!(ate_actual.es_igual_a(&ate1),true);
-        }else{
-            panic!("No se encontro tal recepcion");
-        }
+        assert!(v.buscar_atencion(&"Luchito".to_string(),&"Marcos".to_string(),1234).is_some_and(|a|{
+            let m = Mascota::new(&String::from("Luchito"), 2, &Animales::Perro, &d1);
+            let ate1 = Atencion::new(&m,&"Vomitos".to_string(),&"Pipeta".to_string(),&Some(Fecha::new(5,5,2025)) );
+            a.es_igual_a(&ate1)
+        }),"No se encontro tal recepcion");
+
+        //Búsqueda y eliminación de la última atención modificada
+        let atencion = v.buscar_atencion(&"Luchito".to_string(), &"Marcos".to_string(), 1234).cloned();
+        assert!(atencion.is_some_and(|a| {
+            assert!(a.mascota.nombre == "Luchito");
+            v.eliminar_atencion(&a).is_ok() 
+        }), "No se encontro tal recepcion");
 
     }
+
+    /*
+		Casos especiales para la cobertura de coverage
+	*/
+	#[test]
+	fn caso_especial_error_io() {
+		// Se buscara forzar un ErrorIO usando una ruta cuyo directorio base NO EXISTE
+		let path_err = "./carpeta_inexistente_123/x.json";
+
+		let mut v = Veterinaria::new(&"mordiscos".to_string(),&"av1".to_string(),1,path_err);
+        let d1 = Duenio::new(&"Marcos".to_string(),&"av2".to_string(),1234);
+        let animal1 = Mascota::new(&String::from("Luchito"), 2, &Animales::Perro, &d1);
+        v.agregar_mascota(animal1);
+
+        // Al intentar registrar la atencion, llamará internamente a File::create() en la ruta rota, provocando un ErrorIO
+        assert!(v.atender_mascota().is_some_and(|ani|{
+            let ate1 = Atencion::new(&ani,&"Pulgas".to_string(),&"Pipeta".to_string(),&None);
+            v.registrar_atencion(ate1).is_err_and(|e|{
+                assert!(!e.to_string().is_empty());
+			    matches!(e, Errores::ErrorIO(_))
+            })
+        }),"Ocurrio un error imprevisto");
+		
+	}
+
+	#[test]
+	fn caso_especial_error_serde() {
+		let path_err = "./corrupto.json";
+		
+		// Se fuerza la escritura en el contenido temporal que NO cumple con el formato estructurado de un .JSON válido
+		assert!(std::fs::write(path_err, "{ &&5435#$#$&42365_XXXX1234 : [::: ").is_ok(),"No debio fallar aqui");
+
+		// Se invoca directamente el método para leer el archivo del path que buscara
+
+		assert!(Veterinaria::recuperar_informacion(path_err).is_err_and(|e|{
+			assert!(!e.to_string().is_empty());
+			matches!(e, Errores::ErrorSerde(_))
+		}),"Aquí debió fallar");
+
+		assert!(std::fs::remove_file(path_err).is_ok(),"Error fuera de lo previsto");
+		
+	}
 }

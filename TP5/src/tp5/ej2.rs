@@ -184,25 +184,63 @@ impl PlayList{
         }
         return Err(Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(self.get_nombre())))
     }
-    pub fn mover_cancion(&mut self,c:&Cancion,pos:usize)->Result<(),Errores>{
-        if !self.canciones.is_empty()&&(pos<=self.canciones.len()){
-            let mut pos_aux = None;
-            for i in 0..self.canciones.len(){
-                if self.canciones[i].es_igual_a(&c) {
-                    pos_aux = Some(i);
-                    break;
+    //la posicion oscila entre el rango (0..tam-1) , como lo hacen los metodos genericos de vec .get()
+    pub fn mover_cancion(&mut self,c:&Cancion ,pos:usize) -> Result<(), Errores> {
+        if !self.canciones.is_empty() {
+            if pos < self.canciones.len() {
+                
+                if let Some(indice) = self.canciones.iter().position(|cancion| cancion.es_igual_a(c)) {
+                    if indice != pos {
+                        let cancion = self.canciones.remove(indice);
+                        self.canciones.insert(pos, cancion);
+                    }
+                    
+                    self.guardar_informacion()?;
+                    return Ok(());
                 }
+                return Err(Errores::ErrorOperatoria(error_operatoria::Inexistente(self.get_nombre())));
             }
-            if let Some(indice) = pos_aux{
-                let cancion = self.canciones.remove(indice);
-                self.canciones.insert(pos, cancion);
-                self.guardar_informacion()?;
-                return Ok(())
-            }
-            return Err(Errores::ErrorOperatoria(error_operatoria::Inexistente(self.get_nombre())))
+            return Err(Errores::ErrorOperatoria(error_operatoria::SinDesplazamiento(self.get_nombre())));
         }
-        return Err(Errores::ErrorOperatoria(error_operatoria::SinDesplazamiento(self.get_nombre())))
+        Err(Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(self.get_nombre())))
     }
+    /* 
+    pub fn mover_cancion(&mut self,c:&Cancion,pos:usize)->Result<(),Errores>{
+        if !self.canciones.is_empty(){
+            if pos <= self.canciones.len(){
+                let mut pos_aux = None;
+                //Busqueda
+                for i in 0..self.canciones.len(){
+                    if self.canciones[i].es_igual_a(&c) {
+                        pos_aux = Some(i);
+                        break;
+                    }
+                }
+                //Reorganizacion
+                if let Some(indice) = pos_aux{
+                    if indice != pos{
+                        //Calculo segun posicion de mi elem actual
+                        let pos_destino = if indice < pos {
+                            pos - 1
+                        } else {
+                            pos
+                        };
+                        //Proceso de insercion
+                        let cancion = self.canciones.remove(indice);
+                        self.canciones.insert(pos_destino, cancion);
+                    }
+                    
+                    self.guardar_informacion()?;
+                    return Ok(())
+                }
+                return Err(Errores::ErrorOperatoria(error_operatoria::Inexistente(self.get_nombre())))
+            }
+            return Err(Errores::ErrorOperatoria(error_operatoria::SinDesplazamiento(self.get_nombre())))
+        }
+        return Err(Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(self.get_nombre())))
+        
+    }
+    */
     pub fn buscar_cancion(&self,nom:&String)->Option<&Cancion>{
 		let mut res : Option<&Cancion> = None;
 		if !self.canciones.is_empty() {
@@ -273,23 +311,30 @@ mod testing_ejercicio8{
         let c = Cancion::new(&String::from("pepe"), &String::from("pepito"), &Generos::Rap);
         assert!(p.agregar_cancion(c.clone()).is_ok());
         assert!(p.agregar_cancion(c.clone()).is_ok());
-        if let Some(aux) = p.buscar_cancion(&"pepe".to_string()){
-            assert_eq!(aux.es_igual_a(&c),true);
-        }else{
-            panic!("No existe esa cancion");
-        }
+        assert!(p.buscar_cancion(&"pepe".to_string()).is_some_and(|c1| c1.es_igual_a(&c)),"No existe esa cancion");
 
+        //Desplazamientos
         let c2 = Cancion::new(&String::from("pepo"), &String::from("pepe"), &Generos::Rap);
         assert!(p.agregar_cancion(c2.clone()).is_ok());
         assert!(p.mover_cancion(&c2,0).is_ok());
-        if let Some(aux) = p.canciones.get(0){
-            assert_eq!(aux.es_igual_a(&c2),true);
-        }else{
-            panic!("No existe esa cancion");
-        }
+        assert!(p.canciones.get(0).is_some_and(|c| c.es_igual_a(&c2)),"No existe esa cancion");
+        let c3 = Cancion::new(&String::from("pimpon"), &String::from("tito"), &Generos::Rap);
+        assert!(p.agregar_cancion(c3.clone()).is_ok());
+        assert!(p.mover_cancion(&c3,2).is_ok());
+        assert!(p.canciones.get(2).is_some_and(|c| c.es_igual_a(&c3)),"No existe esa cancion");
+        assert!(p.mover_cancion(&c2,3).is_ok());
+        assert!(p.canciones.get(p.canciones.len()-1).is_some_and(|c| c.es_igual_a(&c2)),"No existe esa cancion");
+        assert!(p.mover_cancion(&c2,4).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e, Errores::ErrorOperatoria(error_operatoria::SinDesplazamiento(_)))
+        }),"Aqui debio fallar");
 
+        //Limpieza completa
         assert!(p.eliminar_canciones().is_ok());
-        assert_eq!(p.canciones.is_empty(),true);
+        assert!(p.mover_cancion(&c2,0).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e, Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(_)))
+        }),"Aqui debio fallar");
     }
     #[test]
     fn listado_canciones(){
