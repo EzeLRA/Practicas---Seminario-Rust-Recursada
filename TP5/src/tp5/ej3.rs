@@ -434,9 +434,10 @@ impl Veterinaria{
 		Ok(atenciones)
 	}
 	fn guardar_informacion(&self) -> Result<(), Errores> {
-	    let mut file = File::create(&self.path).map_err(Errores::ErrorIO)?;
-	    let serialized = serde_json::to_string(&self.atenciones_realizadas).map_err(Errores::ErrorSerde)?;
-        file.write_all(serialized.as_bytes()).map_err(Errores::ErrorIO)
+	    let mut file = File::create(&self.path)?;
+	    let serialized = serde_json::to_string(&self.atenciones_realizadas)?;
+        file.write_all(serialized.as_bytes())?;
+        return Ok(())
     }
     //Metodos primarios
     pub fn new(nom_in:&String,dir_in:&String,id_in:u32,path_in:&str)->Veterinaria{

@@ -454,9 +454,10 @@ impl Biblioteca {
 		Ok(prestamos)
 	}
 	fn guardar_info_prestamos(&self) -> Result<(), Errores> {
-	    let mut file = File::create(&self.path_prestamos).map_err(Errores::ErrorIO)?;
-	    let serialized = serde_json::to_string(&self.prestamos).map_err(Errores::ErrorSerde)?;
-        file.write_all(serialized.as_bytes()).map_err(Errores::ErrorIO)
+	    let mut file = File::create(&self.path_prestamos)?;
+	    let serialized = serde_json::to_string(&self.prestamos)?;
+        file.write_all(serialized.as_bytes())?;
+        return Ok(())
     }
     fn recuperar_info_libros(path:&str)-> Result<Vec<LibrosDispone>,Errores>{
 		let file = File::open(path).map_err(Errores::ErrorIO)?;
@@ -464,9 +465,10 @@ impl Biblioteca {
 		Ok(libros)
 	}
 	fn guardar_info_libros(&self) -> Result<(), Errores> {
-	    let mut file = File::create(&self.path_libros).map_err(Errores::ErrorIO)?;
-	    let serialized = serde_json::to_string(&self.disponibles).map_err(Errores::ErrorSerde)?;
-        file.write_all(serialized.as_bytes()).map_err(Errores::ErrorIO)
+	    let mut file = File::create(&self.path_libros)?;
+	    let serialized = serde_json::to_string(&self.disponibles)?;
+        file.write_all(serialized.as_bytes())?;
+        return Ok(())
     }
 
     /*
@@ -539,7 +541,7 @@ impl Biblioteca {
         return cantidad;
     }
     
-    //Auxiliar de exitencia de prestamo del mismo libro solicitado , para un cliente 
+    //Auxiliar de existencia de prestamo del mismo libro solicitado , para un cliente 
     fn tiene_prestamo_del_libro(&self,cliente:&Cliente,libro:&Libro)->bool{
         let mut existe = false;
         for prestamo in &self.prestamos{
@@ -566,7 +568,7 @@ impl Biblioteca {
             if self.prestamos(&cliente)<5 {
                 if !self.tiene_prestamo_del_libro(&cliente, &libro){
                     self.prestamos.push(Prestamo::new(&libro.clone(), &cliente, &vencimiento));
-                    self.decrementar(&libro.clone());
+                    self.decrementar(&libro.clone())?;
                     self.guardar_info_prestamos()?;
                     return Ok(())
                 }
@@ -579,15 +581,15 @@ impl Biblioteca {
     
     //Parametro auxiliar de fecha para el calculo de proximidad
     //Se filtran solo los que esten dentro del lapso inicial hasta al limite indicado en los dias 
-    pub fn vencimientos_proximos(&self,fecha_act:&Fecha,dias:u32) -> Vec<Prestamo> {
+    pub fn vencimientos_proximos(&self,fecha_act:&Fecha,dias:u32) -> Vec<&Prestamo> {
         let mut fecha_lim = fecha_act.clone();
         fecha_lim.sumar_dias(dias);
-        let mut prestamos: Vec<Prestamo> = Vec::new();
+        let mut prestamos: Vec<&Prestamo> = Vec::new();
         for prestamo in &self.prestamos {
             if (prestamo.estado.es_igual_a(&Estado::EnPrestamo))&&
             (!fecha_act.es_mayor(&prestamo.vencimiento))&&
             (!prestamo.vencimiento.es_mayor(&fecha_lim)) {
-                prestamos.push(prestamo.clone());
+                prestamos.push(&prestamo);
             }
         }
 
@@ -595,12 +597,12 @@ impl Biblioteca {
     }
 
     //Solo apunta como vencidos a los prestamos = (vencimiento < actual) equivalente (actual > vencimiento) 
-    pub fn prestamos_vencidos(&self,f:&Fecha) -> Vec<Prestamo> {
+    pub fn prestamos_vencidos(&self,f:&Fecha) -> Vec<&Prestamo> {
         let mut fecha_actual = f.clone();
-        let mut prestamos: Vec<Prestamo> = Vec::new();
+        let mut prestamos: Vec<&Prestamo> = Vec::new();
         for prestamo in &self.prestamos {
             if (prestamo.estado.es_igual_a(&Estado::EnPrestamo))&&(fecha_actual.es_mayor(&prestamo.vencimiento)) {
-                prestamos.push(prestamo.clone());
+                prestamos.push(prestamo);
             }
         }
 
@@ -609,21 +611,23 @@ impl Biblioteca {
 
     //La busqueda debe retornar el prestamo "mas reciente" , por ello
     //se recorre a la inversa nuestro registro de prestamos y solo retornar el ultimo registrado del cliente
-    fn buscar(&self,libro:&Libro,cliente:&Cliente) -> Option<Prestamo> {
+    fn buscar(&self,libro:&Libro,cliente:&Cliente) -> Option<&Prestamo> {
         let mut res = None;
-        let mut prestamos = self.prestamos.clone();
-        prestamos.reverse();
-        for prestamo in prestamos {
-            if prestamo.es_igual(&libro, &cliente){
-                res = Some(prestamo);
-                break;
-            }
+        if !self.prestamos.is_empty(){
             
+            for i in (0..self.prestamos.len()).rev() {
+                if self.prestamos[i].es_igual(&libro, &cliente){
+                    res = Some(&self.prestamos[i]);
+                    break;
+                }
+                
+            }
         }
+        
         return res
     }
 
-    fn devolver(&mut self,fecha_devolucion:&Fecha,libro:&Libro,cliente:&Cliente)->Result<(),Errores> {
+    fn devolver(&mut self,fecha_devolucion:Fecha,libro:&Libro,cliente:&Cliente)->Result<(),Errores> {
         /* 
         let mut pude = false;
         for prestamo in &mut self.prestamos {
@@ -640,7 +644,7 @@ impl Biblioteca {
             for prestamo in &mut self.prestamos {
                 if prestamo.es_igual(&libro, &cliente) && prestamo.estado.es_igual_a(&Estado::EnPrestamo) {
                     prestamo.estado = Estado::Devuelto;
-                    prestamo.devolucion = Some(fecha_devolucion.clone());
+                    prestamo.devolucion = Some(fecha_devolucion);
                     //Ya se guarda aqui
                     self.incrementar(&libro.clone())?;
                     return Ok(())
@@ -661,38 +665,71 @@ mod testing_ejercicio10 {
         let nombre = String::from("Silencio");
         let direccion = String::from("1 e 2 y 3");
        
-        let mut biblioteca = Biblioteca::new(nombre,direccion);
-        assert_eq!(biblioteca.es_igual_a(&Biblioteca::new("Silencio".to_string(),"1 e 2 y 3".to_string())),true);
+        let mut biblioteca = Biblioteca::new(nombre,direccion,"./lista_libros1.json","./lista_prestamo1.json");
+        assert_eq!(biblioteca.es_igual_a(&Biblioteca::new("Silencio".to_string(),"1 e 2 y 3".to_string(),"./lista_libros.json1","./lista_prestamo1.json")),true);
 
         let libro1 = Libro::new(10, "Libro1".to_string(), "Autor1".to_string(), 50 , Genero::Infantil);
         let libro2 = Libro::new(20, "Libro2".to_string(), "Autor2".to_string(), 50 , Genero::Novela);
         let libro3 = Libro::new(30, "Libro3".to_string(), "Autor3".to_string(), 50 , Genero::Tecnico);
         let libro4 = Libro::new(40, "Libro4".to_string(), "Autor4".to_string(), 50 , Genero::Otro);
 
-        biblioteca.agregar_libro(libro1.clone(),0);
-        biblioteca.incrementar(&libro1);
-        biblioteca.agregar_libro(libro1.clone(),2);
-        biblioteca.agregar_libro(libro2.clone(),3);
-        biblioteca.decrementar(&libro2);
-        biblioteca.agregar_libro(libro3.clone(),3);
-        biblioteca.agregar_libro(libro4.clone(),4);
+        //Estructura vacia
+        assert!(biblioteca.incrementar(&libro1).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(_)))
+        }));
+        assert!(biblioteca.decrementar(&libro2).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(_)))
+        }));
+        
+        //Agrego libro1
+        assert!(biblioteca.agregar_libro(libro1.clone(),0).is_ok());
+        assert!(biblioteca.incrementar(&libro1).is_ok());
+        
+        //Inexistencia de libro2
+        assert!(biblioteca.decrementar(&libro2).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
+        }));
+        assert!(biblioteca.incrementar(&libro2).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
+        }));
+
+        //Fuera de stock del libro1
+        assert!(biblioteca.decrementar(&libro1).is_ok());
+        assert!(biblioteca.decrementar(&libro1).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
+        }));
+
+        assert!(biblioteca.agregar_libro(libro1.clone(),3).is_ok(),"No debio fallar porque el libro ya estaba registrado para reponer stock");
+        assert!(biblioteca.agregar_libro(libro2.clone(),3).is_ok());
+        assert!(biblioteca.decrementar(&libro2).is_ok());
+        assert!(biblioteca.agregar_libro(libro3.clone(),3).is_ok());
+        assert!(biblioteca.agregar_libro(libro4.clone(),4).is_ok());
 
         assert_eq!(biblioteca.copias(&libro1),3);
         assert_eq!(biblioteca.copias(&libro2),2);
         assert_eq!(biblioteca.copias(&libro3),3);
         assert_eq!(biblioteca.copias(&libro4),4);
+
+        //Limpieza para prevenir acumulacion de archivos
+        assert!(std::fs::remove_file("./lista_libros1.json").is_ok(),"Error fuera de lo previsto");
     }
 
+    
     #[test]
     fn nuevos_prestamos(){
-        let mut biblioteca = Biblioteca::new(String::from("Sabio"),String::from("Av1"));
+        let mut biblioteca = Biblioteca::new(String::from("Sabio"),String::from("Av1"),"./lista_libros2.json","./lista_prestamos2.json");
 
         //Libros
         let libro1 = Libro::new(10, "Libro1".to_string(), "Autor1".to_string(), 50 , Genero::Infantil);
         let libro2 = Libro::new(20, "Libro2".to_string(), "Autor2".to_string(), 50 , Genero::Novela);
 
-        biblioteca.agregar_libro(libro1.clone(),5);
-        biblioteca.agregar_libro(libro2.clone(),5);
+        assert!(biblioteca.agregar_libro(libro1.clone(),5).is_ok());
+        assert!(biblioteca.agregar_libro(libro2.clone(),5).is_ok());
 
         let cliente1 = Cliente::new("Carlos".to_string(),1,"Carlos.com".to_string());
         let cliente2 = Cliente::new("Mateo".to_string(),2,"Mateo.com".to_string());
@@ -700,16 +737,21 @@ mod testing_ejercicio10 {
         //Prestamos
         let mut quince_dias = Fecha::new(15, 5, 2026);
 
-        assert!(biblioteca.prestar(cliente1.clone(), &libro1, quince_dias.clone()) , "No se pudo hacer el prestamo");
-        assert!(biblioteca.prestar(cliente2.clone(), &libro2, quince_dias.clone()) , "No se pudo hacer el prestamo");
+        assert!(biblioteca.prestar(cliente1.clone(), &libro1, quince_dias.clone()).is_ok() , "No se pudo hacer el prestamo");
+        assert!(biblioteca.prestar(cliente2.clone(), &libro2, quince_dias.clone()).is_ok() , "No se pudo hacer el prestamo");
 
         assert_eq!(biblioteca.prestamos(&cliente1),1);
         assert_eq!(biblioteca.prestamos(&cliente2),1);
+
+        //Limpieza para prevenir acumulacion de archivos
+        assert!(std::fs::remove_file("./lista_libros2.json").is_ok(),"Error fuera de lo previsto");
+        assert!(std::fs::remove_file("./lista_prestamos2.json").is_ok(),"Error fuera de lo previsto");
     }
 
+     
     #[test]
     fn prestamos_restringidos(){
-        let mut biblioteca = Biblioteca::new(String::from("Sabioso"),String::from("Av12"));
+        let mut biblioteca = Biblioteca::new(String::from("Sabioso"),String::from("Av12"),"./lista_libros3.json","./lista_prestamos3.json");
 
         //Libros
         let libro1 = Libro::new(10, "Libro1".to_string(), "Autor1".to_string(), 50 , Genero::Infantil);
@@ -718,39 +760,60 @@ mod testing_ejercicio10 {
         let libro4 = Libro::new(40, "Libro4".to_string(), "Autor4".to_string(), 50 , Genero::Otro);
         let libro5 = Libro::new(30, "Libro5".to_string(), "Autor3".to_string(), 50 , Genero::Tecnico);
         let libro6 = Libro::new(40, "Libro6".to_string(), "Autor4".to_string(), 50 , Genero::Otro);
-
-        biblioteca.agregar_libro(libro1.clone(),1);
-        biblioteca.agregar_libro(libro2.clone(),5);
-        biblioteca.agregar_libro(libro3.clone(),5);
-        biblioteca.agregar_libro(libro4.clone(),5);
-        biblioteca.agregar_libro(libro5.clone(),5);
-        biblioteca.agregar_libro(libro6.clone(),5);
 
         let cliente3 = Cliente::new("Juan".to_string(),3,"Juan.com".to_string());
         let cliente4 = Cliente::new("Pedro".to_string(),4,"Pedro.com".to_string());
 
-        //Prestamos 
-        assert!(biblioteca.prestar(cliente3.clone(), &libro1, Fecha::new(10,05,2026)) , "No se pudo hacer el prestamo");
-        //Restriccion por stock insuficiente 
-        assert!(!biblioteca.prestar(cliente4.clone(), &libro1, Fecha::new(10,05,2026)) , "No tenia que ocurrir el prestamo");
+        //Sin libros para prestar
+        assert!(biblioteca.prestar(cliente3.clone(), &libro1, Fecha::new(10,05,2026)).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::SinStock(_)))
+        }) );
         
-        biblioteca.incrementar(&libro1);
+        assert!(biblioteca.agregar_libro(libro1.clone(),1).is_ok());
+        assert!(biblioteca.agregar_libro(libro2.clone(),5).is_ok());
+        assert!(biblioteca.agregar_libro(libro3.clone(),5).is_ok());
+        assert!(biblioteca.agregar_libro(libro4.clone(),5).is_ok());
+        assert!(biblioteca.agregar_libro(libro5.clone(),5).is_ok());
+        assert!(biblioteca.agregar_libro(libro6.clone(),5).is_ok());
+
+        //Prestamos 
+        assert!(biblioteca.prestar(cliente3.clone(), &libro1, Fecha::new(10,05,2026)).is_ok() , "No se pudo hacer el prestamo");
+        //Restriccion por stock insuficiente 
+        assert!(biblioteca.prestar(cliente4.clone(), &libro1, Fecha::new(10,05,2026)).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::SinStock(_)))
+        }) );
+
+        assert!(biblioteca.incrementar(&libro1).is_ok());
         //Restriccion del prestamo para el mismo libro pendiente
-        assert!(!biblioteca.prestar(cliente3.clone(), &libro1, Fecha::new(10,05,2026)) , "No tenia que ocurrir el prestamo");
+        assert!(biblioteca.prestar(cliente3.clone(), &libro1, Fecha::new(10,05,2026)).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::PrestamoActivo))
+        }));
         
         //Restriccion por maximo de prestamos otorgados
-        biblioteca.prestar(cliente3.clone(),&libro2,Fecha::new(10,05,2026));
-        biblioteca.prestar(cliente3.clone(),&libro3,Fecha::new(10,05,2026));
-        biblioteca.prestar(cliente3.clone(),&libro4,Fecha::new(10,05,2026));
-        biblioteca.prestar(cliente3.clone(),&libro5,Fecha::new(10,05,2026));
-        assert!(!biblioteca.prestar(cliente3.clone(),&libro6,Fecha::new(10,05,2026)) , "No tenia que ocurrir el prestamo");
+        assert!(biblioteca.prestar(cliente3.clone(),&libro2,Fecha::new(10,05,2026)).is_ok());
+        assert!(biblioteca.prestar(cliente3.clone(),&libro3,Fecha::new(10,05,2026)).is_ok());
+        assert!(biblioteca.prestar(cliente3.clone(),&libro4,Fecha::new(10,05,2026)).is_ok());
+        assert!(biblioteca.prestar(cliente3.clone(),&libro5,Fecha::new(10,05,2026)).is_ok());
+        
+        assert!(biblioteca.prestar(cliente3.clone(),&libro6,Fecha::new(10,05,2026)).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::LimitePrestamos))
+        }));
         
         assert_eq!(biblioteca.prestamos(&cliente3),5);
-    }
 
+        //Limpieza para prevenir acumulacion de archivos
+        assert!(std::fs::remove_file("./lista_libros3.json").is_ok(),"Error fuera de lo previsto");
+        assert!(std::fs::remove_file("./lista_prestamos3.json").is_ok(),"Error fuera de lo previsto");
+    }
+    
+    
     #[test]
     fn prestamos_proximos_a_vencer(){
-        let mut biblioteca = Biblioteca::new(String::from("Sabioso"),String::from("Av12"));
+        let mut biblioteca = Biblioteca::new(String::from("Sabioso"),String::from("Av12"),"./lista_libros4.json","./lista_prestamos4.json");
 
         //Libros
         let libro1 = Libro::new(10, "Libro1".to_string(), "Autor1".to_string(), 50 , Genero::Infantil);
@@ -760,12 +823,12 @@ mod testing_ejercicio10 {
         let libro5 = Libro::new(30, "Libro5".to_string(), "Autor3".to_string(), 50 , Genero::Tecnico);
         let libro6 = Libro::new(40, "Libro6".to_string(), "Autor4".to_string(), 50 , Genero::Otro);
 
-        biblioteca.agregar_libro(libro1.clone(),5);
-        biblioteca.agregar_libro(libro2.clone(),5);
-        biblioteca.agregar_libro(libro3.clone(),5);
-        biblioteca.agregar_libro(libro4.clone(),5);
-        biblioteca.agregar_libro(libro5.clone(),5);
-        biblioteca.agregar_libro(libro6.clone(),5);
+        assert!(biblioteca.agregar_libro(libro1.clone(),5).is_ok());
+        assert!(biblioteca.agregar_libro(libro2.clone(),5).is_ok());
+        assert!(biblioteca.agregar_libro(libro3.clone(),5).is_ok());
+        assert!(biblioteca.agregar_libro(libro4.clone(),5).is_ok());
+        assert!(biblioteca.agregar_libro(libro5.clone(),5).is_ok());
+        assert!(biblioteca.agregar_libro(libro6.clone(),5).is_ok());
 
         let cliente3 = Cliente::new("Juan".to_string(),3,"Juan.com".to_string());
         let cliente4 = Cliente::new("Pedro".to_string(),4,"Pedro.com".to_string());
@@ -773,27 +836,33 @@ mod testing_ejercicio10 {
         //Fechas de referencia actual
         let mut actual = Fecha::new(1,5,2026);
 
+        //Sin prestamos hechos
+        assert!(biblioteca.vencimientos_proximos(&actual,19).is_empty());
+
         //Lapso que evalua (1/5/26 <= vencimiento <= 20/05/26)
-        biblioteca.prestar(cliente3.clone(), &libro1, Fecha::new(12,5,2026));
-        biblioteca.prestar(cliente4.clone(), &libro1, Fecha::new(1,5,2026));
-        biblioteca.prestar(cliente3.clone(), &libro2, Fecha::new(25,5,2026));
-        biblioteca.prestar(cliente4.clone(), &libro6, Fecha::new(2,6,2026));
-        biblioteca.prestar(cliente3.clone(), &libro3, Fecha::new(20,5,2026));
+        assert!(biblioteca.prestar(cliente3.clone(), &libro1, Fecha::new(12,5,2026)).is_ok());
+        assert!(biblioteca.prestar(cliente4.clone(), &libro1, Fecha::new(1,5,2026)).is_ok());
+        assert!(biblioteca.prestar(cliente3.clone(), &libro2, Fecha::new(25,5,2026)).is_ok());
+        assert!(biblioteca.prestar(cliente4.clone(), &libro6, Fecha::new(2,6,2026)).is_ok());
+        assert!(biblioteca.prestar(cliente3.clone(), &libro3, Fecha::new(20,5,2026)).is_ok());
 
         assert_eq!(biblioteca.vencimientos_proximos(&actual,19).len(),3);
 
-        biblioteca.devolver(&Fecha::new(1,5,2026),&libro1,&cliente3);
-        biblioteca.devolver(&Fecha::new(1,5,2026),&libro1,&cliente3);
-        biblioteca.devolver(&Fecha::new(1,5,2026),&libro1,&cliente4);
-        biblioteca.devolver(&Fecha::new(1,5,2026),&libro6,&cliente4);
+        assert!(biblioteca.devolver(Fecha::new(1,5,2026),&libro1,&cliente3).is_ok());
+        assert!(biblioteca.devolver(Fecha::new(1,5,2026),&libro2,&cliente3).is_ok());
+        assert!(biblioteca.devolver(Fecha::new(1,5,2026),&libro1,&cliente4).is_ok());
+        assert!(biblioteca.devolver(Fecha::new(1,5,2026),&libro6,&cliente4).is_ok());
 
         assert_eq!(biblioteca.vencimientos_proximos(&actual,19).len(),1);
 
+        //Limpieza para prevenir acumulacion de archivos
+        assert!(std::fs::remove_file("./lista_libros4.json").is_ok(),"Error fuera de lo previsto");
+        assert!(std::fs::remove_file("./lista_prestamos4.json").is_ok(),"Error fuera de lo previsto");
     }
 
     #[test]
     fn prestamos_vencidos(){
-        let mut biblioteca = Biblioteca::new(String::from("Sabioso"),String::from("Av12"));
+        let mut biblioteca = Biblioteca::new(String::from("Sabioso"),String::from("Av12"),"./lista_libros5.json","./lista_prestamos5.json");
 
         //Libros
         let libro1 = Libro::new(10, "Libro1".to_string(), "Autor1".to_string(), 50 , Genero::Infantil);
@@ -802,13 +871,13 @@ mod testing_ejercicio10 {
         let libro4 = Libro::new(40, "Libro4".to_string(), "Autor4".to_string(), 50 , Genero::Otro);
         let libro5 = Libro::new(30, "Libro5".to_string(), "Autor3".to_string(), 50 , Genero::Tecnico);
         let libro6 = Libro::new(40, "Libro6".to_string(), "Autor4".to_string(), 50 , Genero::Otro);
-
-        biblioteca.agregar_libro(libro1.clone(),5);
-        biblioteca.agregar_libro(libro2.clone(),5);
-        biblioteca.agregar_libro(libro3.clone(),5);
-        biblioteca.agregar_libro(libro4.clone(),5);
-        biblioteca.agregar_libro(libro5.clone(),5);
-        biblioteca.agregar_libro(libro6.clone(),5);
+        
+        assert!(biblioteca.agregar_libro(libro1.clone(),5).is_ok());
+        assert!(biblioteca.agregar_libro(libro2.clone(),5).is_ok());
+        assert!(biblioteca.agregar_libro(libro3.clone(),5).is_ok());
+        assert!(biblioteca.agregar_libro(libro4.clone(),5).is_ok());
+        assert!(biblioteca.agregar_libro(libro5.clone(),5).is_ok());
+        assert!(biblioteca.agregar_libro(libro6.clone(),5).is_ok());
 
         let cliente3 = Cliente::new("Juan".to_string(),3,"Juan.com".to_string());
         let cliente4 = Cliente::new("Pedro".to_string(),4,"Pedro.com".to_string());
@@ -816,25 +885,33 @@ mod testing_ejercicio10 {
         //Fechas de referencia actual
         let mut actual = Fecha::new(1,5,2026);
 
+        //Sin prestamos hechos
+        assert!(biblioteca.prestamos_vencidos(&actual).is_empty());
+
         //Lapso que evalua (vencimiento < 1/5/26)
-        biblioteca.prestar(cliente3.clone(), &libro1, Fecha::new(12,4,2026));
-        biblioteca.prestar(cliente4.clone(), &libro1, Fecha::new(2,4,2026));
-        biblioteca.prestar(cliente3.clone(), &libro2, Fecha::new(25,5,2026));
-        biblioteca.prestar(cliente4.clone(), &libro6, Fecha::new(1,5,2026));
-        biblioteca.prestar(cliente3.clone(), &libro3, Fecha::new(20,5,2026));
+        assert!(biblioteca.prestar(cliente3.clone(), &libro1, Fecha::new(12,4,2026)).is_ok());
+        assert!(biblioteca.prestar(cliente4.clone(), &libro1, Fecha::new(2,4,2026)).is_ok());
+        assert!(biblioteca.prestar(cliente3.clone(), &libro2, Fecha::new(25,5,2026)).is_ok());
+        assert!(biblioteca.prestar(cliente4.clone(), &libro6, Fecha::new(1,5,2026)).is_ok());
+        assert!(biblioteca.prestar(cliente3.clone(), &libro3, Fecha::new(20,5,2026)).is_ok());
 
         assert_eq!(biblioteca.prestamos_vencidos(&actual).len(),2);
 
-        biblioteca.devolver(&Fecha::new(1,5,2026), &libro1, &cliente3);
-        biblioteca.devolver(&Fecha::new(1,5,2026), &libro6, &cliente4);
+        assert!(biblioteca.devolver(Fecha::new(1,5,2026), &libro1, &cliente3).is_ok());
+        assert!(biblioteca.devolver(Fecha::new(1,5,2026), &libro6, &cliente4).is_ok());
 
         assert_eq!(biblioteca.prestamos_vencidos(&actual).len(),1);
 
+        //Limpieza para prevenir acumulacion de archivos
+        assert!(std::fs::remove_file("./lista_libros5.json").is_ok(),"Error fuera de lo previsto");
+        assert!(std::fs::remove_file("./lista_prestamos5.json").is_ok(),"Error fuera de lo previsto");
+
     }
 
+    
     #[test]
     fn busqueda_de_prestamos(){
-        let mut biblioteca = Biblioteca::new(String::from("Sabioso"),String::from("Av12"));
+        let mut biblioteca = Biblioteca::new(String::from("Sabioso"),String::from("Av12"),"./lista_libros6.json","./lista_prestamos6.json");
 
         //Libros
         let libro1 = Libro::new(10, "Libro1".to_string(), "Autor1".to_string(), 50 , Genero::Infantil);
@@ -843,54 +920,113 @@ mod testing_ejercicio10 {
         let libro4 = Libro::new(40, "Libro4".to_string(), "Autor4".to_string(), 50 , Genero::Otro);
         let libro5 = Libro::new(30, "Libro5".to_string(), "Autor3".to_string(), 50 , Genero::Tecnico);
         let libro6 = Libro::new(40, "Libro6".to_string(), "Autor4".to_string(), 50 , Genero::Otro);
-
-        biblioteca.agregar_libro(libro1.clone(),5);
-        biblioteca.agregar_libro(libro2.clone(),5);
-        biblioteca.agregar_libro(libro3.clone(),5);
-        biblioteca.agregar_libro(libro4.clone(),5);
-        biblioteca.agregar_libro(libro5.clone(),5);
-        biblioteca.agregar_libro(libro6.clone(),5);
 
         let cliente2 = Cliente::new("Juanito".to_string(),2,"Juanito.com".to_string());
         let cliente3 = Cliente::new("Juan".to_string(),3,"Juan.com".to_string());
         let cliente4 = Cliente::new("Pedro".to_string(),4,"Pedro.com".to_string());
 
+        assert!(biblioteca.agregar_libro(libro1.clone(),5).is_ok());
+        assert!(biblioteca.agregar_libro(libro2.clone(),5).is_ok());
+        assert!(biblioteca.agregar_libro(libro3.clone(),5).is_ok());
+        assert!(biblioteca.agregar_libro(libro4.clone(),5).is_ok());
+        assert!(biblioteca.agregar_libro(libro5.clone(),5).is_ok());
+        assert!(biblioteca.agregar_libro(libro6.clone(),5).is_ok());
+
+        assert!(biblioteca.devolver(Fecha::new(1,5,2026),&libro1,&cliente3).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(_)))
+        }));
+
         //Fechas de referencia
         //let actual = Fecha::new(1,5,2026);
 
-        biblioteca.prestar(cliente3.clone(), &libro1, Fecha::new(12,5,2026));
-        biblioteca.prestar(cliente4.clone(), &libro1, Fecha::new(1,5,2026));
-        biblioteca.prestar(cliente3.clone(), &libro2, Fecha::new(25,5,2026));
-        biblioteca.prestar(cliente4.clone(), &libro6, Fecha::new(2,6,2026));
-        biblioteca.prestar(cliente3.clone(), &libro3, Fecha::new(20,5,2026));
-        biblioteca.prestar(cliente2.clone(), &libro4, Fecha::new(20,5,2026));
-        biblioteca.prestar(cliente2.clone(), &libro6, Fecha::new(20,5,2026));
+        assert!(biblioteca.prestar(cliente3.clone(), &libro1, Fecha::new(12,5,2026)).is_ok());
+        assert!(biblioteca.prestar(cliente4.clone(), &libro1, Fecha::new(1,5,2026)).is_ok());
+        assert!(biblioteca.prestar(cliente3.clone(), &libro2, Fecha::new(25,5,2026)).is_ok());
+        assert!(biblioteca.prestar(cliente4.clone(), &libro6, Fecha::new(2,6,2026)).is_ok());
+        assert!(biblioteca.prestar(cliente3.clone(), &libro3, Fecha::new(20,5,2026)).is_ok());
+        assert!(biblioteca.prestar(cliente2.clone(), &libro4, Fecha::new(20,5,2026)).is_ok());
+        assert!(biblioteca.prestar(cliente2.clone(), &libro6, Fecha::new(20,5,2026)).is_ok());
 
-        biblioteca.devolver(&Fecha::new(1,5,2026),&libro1,&cliente3);
-        biblioteca.devolver(&Fecha::new(1,5,2026),&libro1,&cliente3);
-        biblioteca.devolver(&Fecha::new(1,5,2026),&libro1,&cliente4);
-        biblioteca.devolver(&Fecha::new(1,5,2026),&libro6,&cliente4);
-        biblioteca.devolver(&Fecha::new(1,5,2026),&libro6,&cliente2);
+        assert!(biblioteca.devolver(Fecha::new(1,5,2026),&libro1,&cliente3).is_ok());
+        assert!(biblioteca.devolver(Fecha::new(1,5,2026),&libro3,&cliente3).is_ok());
+        assert!(biblioteca.devolver(Fecha::new(1,5,2026),&libro1,&cliente4).is_ok());
+        assert!(biblioteca.devolver(Fecha::new(1,5,2026),&libro6,&cliente4).is_ok());
+        assert!(biblioteca.devolver(Fecha::new(1,5,2026),&libro6,&cliente2).is_ok());
 
         //Un prestamo devuelto
-        if let Some(p) = biblioteca.buscar(&libro6, &cliente2){
-            assert!(p.estado.es_igual_a(&Estado::Devuelto),"El prestamo no se devolvio anteriormente");
-        }else{
-            panic!("Se esperaba encontrar el prestamo");
-        }
+        assert!(biblioteca.buscar(&libro6, &cliente2).is_some_and(|p|p.estado.es_igual_a(&Estado::Devuelto)),"El prestamo no se devolvio anteriormente o no existe");
 
         //Un prestamo pendiente
-        if let Some(p) = biblioteca.buscar(&libro2, &cliente3){
-            assert!(p.estado.es_igual_a(&Estado::EnPrestamo),"El prestamo tendria que estar pendiente");
-        }else{
-            panic!("Se esperaba encontrar el prestamo");
-        }
+        assert!(biblioteca.buscar(&libro2, &cliente3).is_some_and(|p|p.estado.es_igual_a(&Estado::EnPrestamo)),"El prestamo tendria que estar pendiente o existir");
 
         //Un prestamo inexistente
-        if let Some(p) = biblioteca.buscar(&libro1,&cliente2){
-            panic!("No deberia existir el prestamo en el registro");
-        }
-        
+        assert!(biblioteca.buscar(&libro1,&cliente2).is_none(),"No deberia existir el prestamo en el registro");
+
+        //Limpieza para prevenir acumulacion de archivos
+        assert!(std::fs::remove_file("./lista_libros6.json").is_ok(),"Error fuera de lo previsto");
+        assert!(std::fs::remove_file("./lista_prestamos6.json").is_ok(),"Error fuera de lo previsto");
+
     }
     
+    /*
+		Casos especiales para la cobertura de coverage
+	*/
+	#[test]
+	fn caso_especial_error_io_libros() {
+		// Se buscara forzar un ErrorIO usando una ruta cuyo directorio base NO EXISTE
+		let path_err = "./carpeta_inexistente_123/x.json";
+
+		let mut biblioteca = Biblioteca::new(String::from("Karateca"),String::from("Av12"),path_err,"./cosa/equisde.json");
+        let libro1 = Libro::new(10, "Libro1".to_string(), "Autor1".to_string(), 50 , Genero::Infantil);
+
+        // Al intentar agregar un libro, llamará internamente a File::create() en la ruta rota, provocando un ErrorIO
+        
+		assert!(biblioteca.agregar_libro(libro1, 1).is_err_and(|e|{
+                assert!(!e.to_string().is_empty());
+			    matches!(e, Errores::ErrorIO(_))
+        }),"Ocurrio un error imprevisto");
+	}
+
+    #[test]
+	fn caso_especial_error_io_prestamos() {
+		// Se buscara forzar un ErrorIO usando una ruta cuyo directorio base NO EXISTE
+		let path_err = "./carpeta_inexistente_123/x.json";
+
+		let mut biblioteca = Biblioteca::new(String::from("Karateca"),String::from("Av12"),"./equisde.json",path_err);
+        let libro1 = Libro::new(10, "Libro1".to_string(), "Autor1".to_string(), 50 , Genero::Infantil);
+        let cliente2 = Cliente::new("Juanito".to_string(),2,"Juanito.com".to_string());
+        // Al intentar hacer un prestamo, llamará internamente a File::create() en la ruta rota, provocando un ErrorIO
+        
+        assert!(biblioteca.agregar_libro(libro1.clone(), 1).is_ok());
+		assert!(biblioteca.prestar(cliente2,&libro1,Fecha::new(4, 4, 2024)).is_err_and(|e|{
+                assert!(!e.to_string().is_empty());
+			    matches!(e, Errores::ErrorIO(_))
+        }),"Ocurrio un error imprevisto");
+        assert!(std::fs::remove_file("./equisde.json").is_ok(),"Error fuera de lo previsto");
+
+	}
+
+	#[test]
+	fn caso_especial_error_serde() {
+		let path_err = "./corrupto.json";
+		
+		// Se fuerza la escritura en el contenido temporal que NO cumple con el formato estructurado de un .JSON válido
+		assert!(std::fs::write(path_err, "{ &&5435#$#$&42365_XXXX1234 : [::: ").is_ok(),"No debio fallar aqui");
+
+		// Se invoca directamente el método para leer el archivo del path que buscara
+
+		assert!(Biblioteca::recuperar_info_libros(path_err).is_err_and(|e|{
+			assert!(!e.to_string().is_empty());
+			matches!(e, Errores::ErrorSerde(_))
+		}),"Aquí debió fallar");
+
+        assert!(Biblioteca::recuperar_info_prestamos(path_err).is_err_and(|e|{
+			assert!(!e.to_string().is_empty());
+			matches!(e, Errores::ErrorSerde(_))
+		}),"Aquí debió fallar");
+
+		assert!(std::fs::remove_file(path_err).is_ok(),"Error fuera de lo previsto");
+		
+	}
 }
