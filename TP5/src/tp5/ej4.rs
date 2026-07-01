@@ -434,13 +434,19 @@ impl Biblioteca {
         return (self.nombre == b.get_nombre())&&(self.direccion == b.get_direccion());
     }
     pub fn new(nombre: String,direccion: String,ruta_l:&str,ruta_p:&str) -> Biblioteca {
-        let disponibles = Vec::new();
-        let prestamos =  Vec::new();
+        let libros : Vec<LibrosDispone> = match Biblioteca::recuperar_info_libros(ruta_l){
+            Ok(dato) => dato,
+            Err(_) => Vec::new()
+        };
+        let prestamos_lista : Vec<Prestamo> =  match Biblioteca::recuperar_info_prestamos(ruta_p){
+            Ok(dato) => dato,
+            Err(_) => Vec::new()
+        };
         return Biblioteca{
             nombre,
             direccion,
-            disponibles,
-            prestamos,
+            disponibles: libros,
+            prestamos : prestamos_lista,
             path_libros: ruta_l.to_string(),
             path_prestamos: ruta_p.to_string()
         }

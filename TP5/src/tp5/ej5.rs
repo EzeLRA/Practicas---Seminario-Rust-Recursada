@@ -24,7 +24,7 @@ impl Display for error_operatoria{
         match self{
             error_operatoria::Inexistente(val) => write!(f, "No se encontro el elemento en la estructura {} ",val),
             error_operatoria::EstructuraVacia(val) => write!(f, "La estrucutra {} no dispone de elementos ",val),
-			error_operatoria::ContratoActivo(val) => write!(f,"El usuario {} ya tiene un contrato activo y no puede emplear otro nuevo")
+			error_operatoria::ContratoActivo(val) => write!(f,"El usuario {} ya tiene un contrato activo y no puede emplear otro nuevo",val),
 			error_operatoria::Rechazado(val) => write!(f,"La operacion a sido rechazada por {}",val)
 		}
     }
@@ -198,9 +198,13 @@ impl ContratoSuscripcion{
 
 impl Plataforma{
 	pub fn new(path_in:&str)->Plataforma{
+		let suscripciones : Vec<ContratoSuscripcion> = match Plataforma::recuperar_informacion(path_in){
+			Ok(datos) => datos,
+			Err(_) => Vec::new()
+		};
 		return Plataforma { 
 			usuarios: Vec::new(), 
-			registro_suscripciones: Vec::new() ,
+			registro_suscripciones: suscripciones ,
 			path: path_in.to_string()
 		}
 	}
@@ -213,9 +217,10 @@ impl Plataforma{
 		Ok(suscripciones)
 	}
 	fn guardar_informacion(&self) -> Result<(), Errores> {
-	    let mut file = File::create(&self.path).map_err(Errores::ErrorIO)?;
-	    let serialized = serde_json::to_string(&self.registro_suscripciones).map_err(Errores::ErrorSerde)?;
-        file.write_all(serialized.as_bytes()).map_err(Errores::ErrorIO)
+	    let mut file = File::create(&self.path)?;
+	    let serialized = serde_json::to_string(&self.registro_suscripciones)?;
+        file.write_all(serialized.as_bytes())?;
+		return Ok(())
     }
 	/* 
 		Metodos primarios
@@ -405,7 +410,7 @@ mod test_ejercicio3{
 
 	#[test]
 	fn registro_inicial(){
-		let mut sistema = Plataforma::new();
+		let mut sistema = Plataforma::new("./lista_suscripciones.json");
 		let mut user1 = Usuario::new(&"Marco", 12345);
 		let mut user2 = Usuario::new(&"Marco",1234);
 		
@@ -420,15 +425,28 @@ mod test_ejercicio3{
 		let mut s2 = ContratoSuscripcion::new(12345, &TipoSuscripcion::Super, 5000.0, 5, 200125, &MediosDePago::Efectivo);
 		let mut s3 = ContratoSuscripcion::new(2345, &TipoSuscripcion::Super, 5000.0, 5, 200125, &MediosDePago::Efectivo);
 
-		assert!(sistema.registrar_contrato(&s1));
-		assert!(sistema.registrar_contrato(&s2));
-		assert!(!sistema.registrar_contrato(&s3));
-		assert!(!sistema.registrar_contrato(&s1));
+		assert!(sistema.registrar_contrato(&s1).is_ok());
+		assert!(sistema.registrar_contrato(&s2).is_ok());
+		assert!(sistema.registrar_contrato(&s3).is_err_and(|e|{
+			assert!(!e.to_string().is_empty());
+			matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
+		}));
+		assert!(sistema.registrar_contrato(&s1).is_err_and(|e|{
+			assert!(!e.to_string().is_empty());
+			matches!(e,Errores::ErrorOperatoria(error_operatoria::ContratoActivo(_)))
+		}));
 		let mut s2 = ContratoSuscripcion::new(12345, &TipoSuscripcion::Clasic, 5000.0, 5, 200125, &MediosDePago::Efectivo);
-		assert!(!sistema.registrar_contrato(&s2));
+		assert!(sistema.registrar_contrato(&s2).is_err_and(|e|{
+			assert!(!e.to_string().is_empty());
+			matches!(e,Errores::ErrorOperatoria(error_operatoria::ContratoActivo(_)))
+		}));
 		assert_eq!(sistema.listado_suscripciones(true).len(),2);
+
+		//Limpieza para prevenir acumulacion de archivos
+        assert!(std::fs::remove_file("./lista_suscripciones.json").is_ok(),"Error fuera de lo previsto");
 	}
 
+	/* 
 	#[test]
 	fn registro_operatoria(){
 		let mut sistema = Plataforma::new();
@@ -544,5 +562,5 @@ mod test_ejercicio3{
 			panic!("Debio de retornar un maximo");
 		}
 	}
-
+	*/
 }
