@@ -87,15 +87,15 @@ impl Usuario{
 }
 
 impl ContratoSuscripcion{
-	pub fn new(dni:u64,tipo:&TipoSuscripcion,costo:f64,cant:u8,fecha:u64,medio:&MediosDePago)->ContratoSuscripcion{
+	pub fn new(dni:u64,tipo:TipoSuscripcion,costo:f64,cant:u8,fecha:u64,medio:MediosDePago)->ContratoSuscripcion{
 		return ContratoSuscripcion { 
 			dni_usuario: dni,
-			tipo_suscripcion: tipo.clone(), 
+			tipo_suscripcion: tipo, 
 			activo: true, 
 			costo_mensual: costo, 
 			duracion_mes: cant, 
 			fecha_inicio: fecha, 
-			tipo_pago: medio.clone() 
+			tipo_pago: medio
 		}
 	}
 	pub fn cancelar_suscripcion(&mut self){
@@ -149,8 +149,8 @@ impl Plataforma{
 		return true
 	}
 	pub fn registrar_contrato(&mut self,c:ContratoSuscripcion)->bool{
-		if !self.registro_suscripciones.iter().any(|s| s.dni_igual(c.dni_usuario) && s.activo){
-			self.registro_suscripciones.push(c.clone());
+		if self.usuario_en_sistema(c.dni_usuario)&&(!self.registro_suscripciones.iter().any(|s| s.dni_igual(c.dni_usuario) && s.activo)){
+			self.registro_suscripciones.push(c);
 		}else{
 			return false
 		}
@@ -284,8 +284,8 @@ mod test_ejercicio3{
 
 	#[test]
 	fn cambio_suscripcion(){
-		let mut s1 = ContratoSuscripcion::new(1234,&TipoSuscripcion::Basic, 100.0, 2, 120526, &MediosDePago::Efectivo);
-		let mut s2 = ContratoSuscripcion::new(1234,&TipoSuscripcion::Super, 100.0, 2, 120526, &MediosDePago::Efectivo);
+		let mut s1 = ContratoSuscripcion::new(1234,TipoSuscripcion::Basic, 100.0, 2, 120526, MediosDePago::Efectivo);
+		let mut s2 = ContratoSuscripcion::new(1234,TipoSuscripcion::Super, 100.0, 2, 120526, MediosDePago::Efectivo);
 		
 		//Cambio nulo
 		assert!(!s1.downgrade_tipo());
@@ -316,15 +316,15 @@ mod test_ejercicio3{
 		assert!(!sistema.registrar_usuario(user2));
 		assert_eq!(sistema.usuarios.len(),2);
 
-		let mut s1 = ContratoSuscripcion::new(1234, &TipoSuscripcion::Basic, 1000.0, 5, 200125, &MediosDePago::Efectivo);
-		let mut s2 = ContratoSuscripcion::new(12345, &TipoSuscripcion::Super, 5000.0, 5, 200125, &MediosDePago::Efectivo);
-		let mut s3 = ContratoSuscripcion::new(2345, &TipoSuscripcion::Super, 5000.0, 5, 200125, &MediosDePago::Efectivo);
+		let mut s1 = ContratoSuscripcion::new(1234, TipoSuscripcion::Basic, 1000.0, 5, 200125, MediosDePago::Efectivo);
+		let mut s2 = ContratoSuscripcion::new(12345, TipoSuscripcion::Super, 5000.0, 5, 200125, MediosDePago::Efectivo);
+		let mut s3 = ContratoSuscripcion::new(2345, TipoSuscripcion::Super, 5000.0, 5, 200125, MediosDePago::Efectivo);
 
 		assert!(sistema.registrar_contrato(s1.clone()));
 		assert!(sistema.registrar_contrato(s2));
 		assert!(!sistema.registrar_contrato(s3));
 		assert!(!sistema.registrar_contrato(s1));
-		let mut s2 = ContratoSuscripcion::new(12345, &TipoSuscripcion::Clasic, 5000.0, 5, 200125, &MediosDePago::Efectivo);
+		let mut s2 = ContratoSuscripcion::new(12345, TipoSuscripcion::Clasic, 5000.0, 5, 200125, MediosDePago::Efectivo);
 		assert!(!sistema.registrar_contrato(s2));
 		assert_eq!(sistema.listado_suscripciones(true).len(),2);
 	}
@@ -338,8 +338,8 @@ mod test_ejercicio3{
 		sistema.registrar_usuario(user1.clone());
 		sistema.registrar_usuario(user2.clone());
 
-		let mut s1 = ContratoSuscripcion::new(1234, &TipoSuscripcion::Basic, 1000.0, 5, 200125, &MediosDePago::Efectivo);
-		let mut s2 = ContratoSuscripcion::new(12345, &TipoSuscripcion::Super, 5000.0, 5, 200125, &MediosDePago::Efectivo);
+		let mut s1 = ContratoSuscripcion::new(1234, TipoSuscripcion::Basic, 1000.0, 5, 200125, MediosDePago::Efectivo);
+		let mut s2 = ContratoSuscripcion::new(12345, TipoSuscripcion::Super, 5000.0, 5, 200125, MediosDePago::Efectivo);
 	
 		sistema.registrar_contrato(s1);
 		sistema.registrar_contrato(s2);
@@ -353,7 +353,7 @@ mod test_ejercicio3{
 		assert!(sistema.downgrade(&user1));
 		assert!(sistema.downgrade(&user1));
 
-		s1 = ContratoSuscripcion::new(1234, &TipoSuscripcion::Clasic, 2500.0, 5, 200125, &MediosDePago::Efectivo);
+		s1 = ContratoSuscripcion::new(1234, TipoSuscripcion::Clasic, 2500.0, 5, 200125, MediosDePago::Efectivo);
 		sistema.registrar_contrato(s1);
 		assert!(sistema.cancelar_suscripcion(&user1));
 
@@ -374,10 +374,10 @@ mod test_ejercicio3{
 		sistema.registrar_usuario(user3);
 		sistema.registrar_usuario(user4);
 
-		let s1 = ContratoSuscripcion::new(12345, &TipoSuscripcion::Basic, 1000.0, 5, 200125, &MediosDePago::Efectivo);
-		let s2 = ContratoSuscripcion::new(1234, &TipoSuscripcion::Basic, 1000.0, 5, 200125, &MediosDePago::MercadoPago(InfoMercadoPago { alias: "zapato".to_string(), cuil: 123456 }));
-		let s3 = ContratoSuscripcion::new(4554, &TipoSuscripcion::Basic, 1000.0, 5, 200125, &MediosDePago::Criptomoneda(InfoCripto { wallet_address : "asd2354tg42t".to_string(), red: "%#1234".to_string() }));
-		let s4 = ContratoSuscripcion::new(3487, &TipoSuscripcion::Basic, 1000.0, 5, 200125, &MediosDePago::Efectivo);
+		let s1 = ContratoSuscripcion::new(12345, TipoSuscripcion::Basic, 1000.0, 5, 200125, MediosDePago::Efectivo);
+		let s2 = ContratoSuscripcion::new(1234, TipoSuscripcion::Basic, 1000.0, 5, 200125, MediosDePago::MercadoPago(InfoMercadoPago { alias: "zapato".to_string(), cuil: 123456 }));
+		let s3 = ContratoSuscripcion::new(4554, TipoSuscripcion::Basic, 1000.0, 5, 200125, MediosDePago::Criptomoneda(InfoCripto { wallet_address : "asd2354tg42t".to_string(), red: "%#1234".to_string() }));
+		let s4 = ContratoSuscripcion::new(3487, TipoSuscripcion::Basic, 1000.0, 5, 200125, MediosDePago::Efectivo);
 
 		sistema.registrar_contrato(s1);
 		sistema.registrar_contrato(s2);

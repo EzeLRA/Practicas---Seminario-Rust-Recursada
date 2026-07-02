@@ -40,9 +40,9 @@ struct ProductoVendido {
 }
 
 impl ProductoVendido {
-    pub fn new(producto: &Producto, cantidad: u64) -> ProductoVendido {
+    pub fn new(prod: Producto, cantidad: u64) -> ProductoVendido {
         ProductoVendido{
-            producto: producto.clone(),
+            producto: prod,
             cantidad,
         }
     }
@@ -56,6 +56,11 @@ struct DatosPersona {
     dni: u64,
 }
 
+impl DatosPersona{
+    pub fn new(nom:&str,ape:&str,dir:&str,dni_in:u64)->DatosPersona{
+        DatosPersona { nombre: nom.to_string(), apellido: ape.to_string(), direccion: dir.to_string(), dni: dni_in }
+    }
+}
 #[derive(PartialEq,Debug,Clone)]
 struct Cliente {
     datos: DatosPersona,
@@ -65,12 +70,7 @@ struct Cliente {
 impl Cliente {
     pub fn new(nombre: &str, apellido: &str, direccion: &str, dni: u64) -> Cliente {
         Cliente {
-            datos: DatosPersona {
-                nombre: nombre.to_string(),
-                apellido: apellido.to_string(),
-                direccion: direccion.to_string(),
-                dni,
-            },
+            datos : DatosPersona::new(nombre, apellido, direccion, dni),
             correo_newsletter: None,
         }
     }
@@ -93,12 +93,7 @@ struct Vendedor {
 impl Vendedor {
     pub fn new(nombre: &str, apellido: &str, direccion: &str, dni: u64, legajo: u64, antiguedad: u8, salario: f64) -> Vendedor {
         Vendedor {
-            datos: DatosPersona {
-                nombre: nombre.to_string(),
-                apellido: apellido.to_string(),
-                direccion: direccion.to_string(),
-                dni,
-            },
+            datos: DatosPersona::new(nombre, apellido, direccion, dni),
             legajo,
             antiguedad,
             salario,
@@ -116,13 +111,13 @@ struct Venta {
 }
 
 impl Venta {
-    pub fn new(fecha: &str, cliente: &Cliente, vendedor: &Vendedor, medio_pago: &MediosDePago, productos: &Vec<ProductoVendido>) -> Venta {
+    pub fn new(fecha: &str, cli: Cliente, vend: Vendedor, m_pago: MediosDePago, products: Vec<ProductoVendido>) -> Venta {
         Venta{
             fecha: fecha.to_string(),
-            cliente: cliente.clone(),
-            vendedor: vendedor.clone(),
-            medio_pago: medio_pago.clone(),
-            productos: productos.clone(),
+            cliente: cli,
+            vendedor: vend,
+            medio_pago: m_pago,
+            productos: products,
         }
     }
 }
@@ -134,8 +129,8 @@ struct ReporteCategoria{
 }
 
 impl ReporteCategoria{
-    pub fn new(categ:&Categorias,total:f64)->ReporteCategoria{
-        return ReporteCategoria { categoria: categ.clone(), monto_total: total }
+    pub fn new(categ:Categorias,total:f64)->ReporteCategoria{
+        return ReporteCategoria { categoria: categ, monto_total: total }
     }
 }
 
@@ -191,21 +186,21 @@ impl Sistema {
         self.descuentos_categorias.insert(categoria, porcentaje);
     }
 
-    pub fn registrar_vendedor(&mut self,v:&Vendedor)->bool{
+    pub fn registrar_vendedor(&mut self,v:Vendedor)->bool{
         let mut exito = false;
         
         if !self.vendedores.iter().any(|vendedor| vendedor.legajo == v.legajo){
-            self.vendedores.push(v.clone());
+            self.vendedores.push(v);
             exito = true;
         }
 
         return exito
     }
 
-    pub fn registrar_venta(&mut self, venta: &Venta)->bool{
+    pub fn registrar_venta(&mut self, venta: Venta)->bool{
         let mut exito = false;
         if self.vendedores.iter().any(|vendedor| vendedor.legajo == venta.vendedor.legajo){
-            self.ventas.push(venta.clone());
+            self.ventas.push(venta);
             exito = true;
         }
         return exito
@@ -271,7 +266,7 @@ impl Sistema {
         if !reporte.is_empty(){
             let mut res = Reporte::new();
             reporte.iter().for_each(|r|{
-                res.agregar(ReporteCategoria::new(&r.0,*r.1));
+                res.agregar(ReporteCategoria::new(r.0.clone(),*r.1));
             });
             return Some(res)
         }
@@ -330,25 +325,25 @@ mod test_ejercicio4{
     fn registro_vendedores(){
         let mut muestra = construir_sistema();
         let vendedor2 = Vendedor::new("Mariana","Sanchez", "Calle 123", 1234567, 891231, 1, 50000.0);
-        assert!(muestra.0.registrar_vendedor(&muestra.1));
-        assert!(muestra.0.registrar_vendedor(&vendedor2));
-        assert!(!muestra.0.registrar_vendedor(&vendedor2));
+        assert!(muestra.0.registrar_vendedor(muestra.1));
+        assert!(muestra.0.registrar_vendedor(vendedor2.clone()));
+        assert!(!muestra.0.registrar_vendedor(vendedor2));
     }
 
     #[test]
     fn registro_ventas(){
         let mut muestra = construir_sistema();
         let vendedor2 = Vendedor::new("Mariana","Sanchez", "Calle 123", 1234567, 891231, 1, 50000.0);
-        muestra.0.registrar_vendedor(&muestra.1);
+        muestra.0.registrar_vendedor(muestra.1.clone());
 
         let cli1 = Cliente::new("Juan","Golosito", "Av 5", 987123);
 
-        let v1 = Venta::new("1/5/26", &cli1, &muestra.1,&MediosDePago::Efectivo, &retornar_productos());
+        let v1 = Venta::new("1/5/26", cli1.clone(), muestra.1,MediosDePago::Efectivo, retornar_productos());
 
-        assert!(muestra.0.registrar_venta(&v1));
+        assert!(muestra.0.registrar_venta(v1));
         
-        let v2 = Venta::new("1/5/26", &cli1, &vendedor2,&MediosDePago::TransferenciaBancaria, &retornar_productos());
-        assert!(!muestra.0.registrar_venta(&v2));
+        let v2 = Venta::new("1/5/26", cli1.clone(), vendedor2,MediosDePago::TransferenciaBancaria, retornar_productos());
+        assert!(!muestra.0.registrar_venta(v2));
 
     }
 
@@ -358,10 +353,10 @@ mod test_ejercicio4{
 
         let cli1 = Cliente::new("Juan","Golosito", "Av 5", 987123);
 
-        let v1 = Venta::new("1/5/26", &cli1, &muestra.1,&MediosDePago::Efectivo, &Vec::new());
+        let v1 = Venta::new("1/5/26", cli1, muestra.1,MediosDePago::Efectivo, Vec::new());
 
         //Se tiene en cuenta que el sistema no concidera si la venta se registro en el sistema o no
-        //Por lo que puede calcular el monto de una venta recibida 
+        //Por lo que solo calcula el monto de una venta recibida 
 
         assert_eq!(muestra.0.calcular_precio_final(&v1),0.0);
 
@@ -373,7 +368,7 @@ mod test_ejercicio4{
 
         let cli1 = Cliente::new("Juan","Golosito", "Av 5", 987123);
 
-        let v1 = Venta::new("1/5/26", &cli1, &muestra.1,&MediosDePago::Efectivo, &retornar_productos());
+        let v1 = Venta::new("1/5/26", cli1, muestra.1,MediosDePago::Efectivo, retornar_productos());
 
         assert_eq!(muestra.0.calcular_precio_final(&v1),13850.0);
 
@@ -387,7 +382,7 @@ mod test_ejercicio4{
 
         muestra.0.otorgar_newsletter(&mut cli1);
 
-        let v1 = Venta::new("1/5/26", &cli1, &muestra.1,&MediosDePago::Efectivo, &retornar_productos());
+        let v1 = Venta::new("1/5/26", cli1, muestra.1,MediosDePago::Efectivo, retornar_productos());
 
         assert_eq!(muestra.0.calcular_precio_final(&v1),6925.0);
 
@@ -408,14 +403,14 @@ mod test_ejercicio4{
         let l2 = productos_base[1..4].to_vec();
         let l3 = productos_base.clone();
 
-        let v1 = Venta::new("1/5/26", &cli1, &muestra.1,&MediosDePago::Efectivo, &l1);
-        let v2 = Venta::new("1/5/26", &cli2, &muestra.1,&MediosDePago::Efectivo, &l2);
-        let v3 = Venta::new("1/5/26", &cli1, &muestra.1,&MediosDePago::Efectivo, &l3);
+        let v1 = Venta::new("1/5/26", cli1.clone() , muestra.1.clone(),MediosDePago::Efectivo, l1);
+        let v2 = Venta::new("1/5/26", cli2, muestra.1.clone(),MediosDePago::Efectivo, l2);
+        let v3 = Venta::new("1/5/26", cli1, muestra.1.clone(),MediosDePago::Efectivo, l3);
 
-        muestra.0.registrar_vendedor(&muestra.1);
-        muestra.0.registrar_venta(&v1);
-        muestra.0.registrar_venta(&v2);
-        muestra.0.registrar_venta(&v3);
+        muestra.0.registrar_vendedor(muestra.1.clone());
+        muestra.0.registrar_venta(v1);
+        muestra.0.registrar_venta(v2);
+        muestra.0.registrar_venta(v3);
         
         if let Some(reporte1) = muestra.0.reporte_ventas_por_categoria(){
             assert_eq!(reporte1.listado.len(),4);
@@ -444,7 +439,7 @@ mod test_ejercicio4{
     fn reporte_sin_ventas(){
         let mut muestra = construir_sistema();
 
-        muestra.0.registrar_vendedor(&muestra.1);
+        muestra.0.registrar_vendedor(muestra.1);
 
         assert!(muestra.0.reporte_ventas_por_categoria().is_none(),"No tendria que haber retornado algo");
         assert!(muestra.0.reporte_ventas_por_vendedor().is_none(),"No tendria que haber retornado algo");
