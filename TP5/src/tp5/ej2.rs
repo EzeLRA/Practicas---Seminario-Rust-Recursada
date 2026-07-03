@@ -108,33 +108,33 @@ impl Generos{
 }
 impl Cancion{
     //Metodos secundarios
-    pub fn get_titulo(&self)->String{
-        return self.titulo.clone();
+    pub fn get_titulo(&self)->&String{
+        return &self.titulo;
     }
-    pub fn get_artista(&self)->String{
-        return self.artista.clone();
+    pub fn get_artista(&self)->&String{
+        return &self.artista;
     }
-    pub fn get_genero(&self)->Generos{
-        return self.genero.clone()
+    pub fn get_genero(&self)->&Generos{
+        return &self.genero
     }
     pub fn es_igual_a(&self,c:&Cancion)->bool{
-        return (self.titulo == c.get_titulo())&&(self.artista == c.get_artista())&&
+        return (&self.titulo == c.get_titulo())&&(&self.artista == c.get_artista())&&
         (self.genero.es_igual_a(&c.get_genero()));
     }
     //Metodos primarios
-    pub fn new(nom1:&String,nom2:&String,gen_in:&Generos)->Cancion{
+    pub fn new(nom1:&str,nom2:&str,gen_in:Generos)->Cancion{
         return Cancion{
-            titulo : nom1.clone(),
-            artista : nom2.clone(),
-            genero : gen_in.clone()
+            titulo : nom1.to_string(),
+            artista : nom2.to_string(),
+            genero : gen_in
         }
     }    
 }
 
 impl PlayList{
     //Metodos secundarios
-    pub fn get_nombre(&self)->String{
-        return self.nombre.clone(); 
+    pub fn get_nombre(&self)->&String{
+        return &self.nombre; 
     }
     /*
 		Nuevos metodos del tp5
@@ -151,7 +151,7 @@ impl PlayList{
         return Ok(())
     }
     //Metodos primarios
-    pub fn new(nom:&String,path_in:&str)->PlayList{
+    pub fn new(nom:&str,path_in:&str)->PlayList{
         let list_canciones : Vec<Cancion> = match PlayList::recuperar_informacion(&path_in){
 			Ok(dato) => {
                 dato
@@ -181,9 +181,9 @@ impl PlayList{
                 self.guardar_informacion()?;
                 return Ok(())
             }
-            return Err(Errores::ErrorOperatoria(error_operatoria::Inexistente(self.get_nombre())))
+            return Err(Errores::ErrorOperatoria(error_operatoria::Inexistente(self.get_nombre().clone())))
         }
-        return Err(Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(self.get_nombre())))
+        return Err(Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(self.get_nombre().clone())))
     }
     //la posicion oscila entre el rango (0..tam-1) , como lo hacen los metodos genericos de vec .get()
     pub fn mover_cancion(&mut self,c:&Cancion ,pos:usize) -> Result<(), Errores> {
@@ -199,54 +199,18 @@ impl PlayList{
                     self.guardar_informacion()?;
                     return Ok(());
                 }
-                return Err(Errores::ErrorOperatoria(error_operatoria::Inexistente(self.get_nombre())));
+                return Err(Errores::ErrorOperatoria(error_operatoria::Inexistente(self.get_nombre().clone())));
             }
-            return Err(Errores::ErrorOperatoria(error_operatoria::SinDesplazamiento(self.get_nombre())));
+            return Err(Errores::ErrorOperatoria(error_operatoria::SinDesplazamiento(self.get_nombre().clone())));
         }
-        Err(Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(self.get_nombre())))
+        Err(Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(self.get_nombre().clone())))
     }
-    /* 
-    pub fn mover_cancion(&mut self,c:&Cancion,pos:usize)->Result<(),Errores>{
-        if !self.canciones.is_empty(){
-            if pos <= self.canciones.len(){
-                let mut pos_aux = None;
-                //Busqueda
-                for i in 0..self.canciones.len(){
-                    if self.canciones[i].es_igual_a(&c) {
-                        pos_aux = Some(i);
-                        break;
-                    }
-                }
-                //Reorganizacion
-                if let Some(indice) = pos_aux{
-                    if indice != pos{
-                        //Calculo segun posicion de mi elem actual
-                        let pos_destino = if indice < pos {
-                            pos - 1
-                        } else {
-                            pos
-                        };
-                        //Proceso de insercion
-                        let cancion = self.canciones.remove(indice);
-                        self.canciones.insert(pos_destino, cancion);
-                    }
-                    
-                    self.guardar_informacion()?;
-                    return Ok(())
-                }
-                return Err(Errores::ErrorOperatoria(error_operatoria::Inexistente(self.get_nombre())))
-            }
-            return Err(Errores::ErrorOperatoria(error_operatoria::SinDesplazamiento(self.get_nombre())))
-        }
-        return Err(Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(self.get_nombre())))
-        
-    }
-    */
+    
     pub fn buscar_cancion(&self,nom:&String)->Option<&Cancion>{
 		let mut res : Option<&Cancion> = None;
 		if !self.canciones.is_empty() {
 			for cancion in &self.canciones{
-				if cancion.get_titulo() == *nom {
+				if cancion.get_titulo() == nom {
 					res = Some(cancion);
                     break;
 				}
@@ -254,7 +218,7 @@ impl PlayList{
 		}
 		return res;
 	}
-    pub fn canciones_genero(&self,gen_in:&Generos)->Result<(Vec<&Cancion>),Errores>{
+    pub fn canciones_genero(&self,gen_in:&Generos)->Result<Vec<&Cancion>,Errores>{
         
         if !self.canciones.is_empty() {
             let mut res = Vec::new();
@@ -266,21 +230,21 @@ impl PlayList{
             }
             return Ok(res)
         }
-        return Err(Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(self.get_nombre())));
+        return Err(Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(self.get_nombre().clone())));
     }
     pub fn canciones_artista(&self,nom:&String)->Result<(Vec<&Cancion>),Errores>{
         
         if !self.canciones.is_empty() {
             let mut res = Vec::new();
             for cancion in &self.canciones{
-                if cancion.get_artista() == *nom {
+                if cancion.get_artista() == nom {
                     res.push(cancion);
                     
                 }
             }
             return Ok(res)
         }
-        return Err(Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(self.get_nombre())));
+        return Err(Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(self.get_nombre().clone())));
     }
     pub fn modificar_titulo(&mut self,nom_nuevo:&String){
         self.nombre = nom_nuevo.to_string();
@@ -301,25 +265,25 @@ mod testing_ejercicio8{
     fn manipulacion_playlist(){
         let mut nom_pri = "reproductor1".to_string();
         let mut p = PlayList::new(&nom_pri,"");
-        assert_eq!(p.get_nombre(),nom_pri);
+        assert_eq!(p.get_nombre(),&nom_pri.to_string());
         nom_pri = "repro1".to_string();
         p.modificar_titulo(&nom_pri);
-        assert_eq!(p.get_nombre(),nom_pri);
+        assert_eq!(p.get_nombre(),&nom_pri.to_string());
     }
     #[test]
     fn operatoria_canciones(){
         let mut p = PlayList::new(&"asd".to_string(),"./lista_canciones.json");
-        let c = Cancion::new(&String::from("pepe"), &String::from("pepito"), &Generos::Rap);
+        let c = Cancion::new(&"pepe", &"pepito", Generos::Rap);
         assert!(p.agregar_cancion(c.clone()).is_ok());
         assert!(p.agregar_cancion(c.clone()).is_ok());
         assert!(p.buscar_cancion(&"pepe".to_string()).is_some_and(|c1| c1.es_igual_a(&c)),"No existe esa cancion");
 
         //Desplazamientos
-        let c2 = Cancion::new(&String::from("pepo"), &String::from("pepe"), &Generos::Rap);
+        let c2 = Cancion::new(&"pepo", & "pepe", Generos::Rap);
         assert!(p.agregar_cancion(c2.clone()).is_ok());
         assert!(p.mover_cancion(&c2,0).is_ok());
         assert!(p.canciones.get(0).is_some_and(|c| c.es_igual_a(&c2)),"No existe esa cancion");
-        let c3 = Cancion::new(&String::from("pimpon"), &String::from("tito"), &Generos::Rap);
+        let c3 = Cancion::new(&"pimpon", &"tito", Generos::Rap);
         assert!(p.agregar_cancion(c3.clone()).is_ok());
         assert!(p.mover_cancion(&c3,2).is_ok());
         assert!(p.canciones.get(2).is_some_and(|c| c.es_igual_a(&c3)),"No existe esa cancion");
@@ -339,11 +303,11 @@ mod testing_ejercicio8{
     }
     #[test]
     fn listado_canciones(){
-        let mut p = PlayList::new(&"asd".to_string(),"./lista_canciones.json");
-        let c1 = Cancion::new(&String::from("pepe"), &String::from("pepito"), &Generos::Rap);
-        let c4 = Cancion::new(&String::from("pepesito"), &String::from("pepito"), &Generos::Jazz);
-        let c2 = Cancion::new(&String::from("donPepe"), &String::from("donPepito"), &Generos::Rap);
-        let c3 = Cancion::new(&String::from("qwe"), &String::from("Qwe"), &Generos::Rock);
+        let mut p = PlayList::new(&"asd","./lista_canciones.json");
+        let c1 = Cancion::new(&"pepe", &"pepito", Generos::Rap);
+        let c4 = Cancion::new(&"pepesito", &"pepito", Generos::Jazz);
+        let c2 = Cancion::new(&"donPepe", &"donPepito", Generos::Rap);
+        let c3 = Cancion::new(&"qwe", &"Qwe", Generos::Rock);
         assert!(p.agregar_cancion(c1.clone()).is_ok());
         assert!(p.agregar_cancion(c2).is_ok());
         assert!(p.agregar_cancion(c1).is_ok());
@@ -359,7 +323,7 @@ mod testing_ejercicio8{
         
         assert!(p.canciones_artista(&"pepito".to_string()).is_ok_and(|l|{
             assert_eq!(l.len(),3);
-            l.iter().all(|c| c.get_artista() == "pepito".to_string())
+            l.iter().all(|c| c.get_artista() == &"pepito".to_string())
         }));
 
         assert!(p.eliminar_canciones().is_ok());
@@ -376,8 +340,8 @@ mod testing_ejercicio8{
 		// Se buscara forzar un ErrorIO usando una ruta cuyo directorio base NO EXISTE
 		let path_imposible = "./carpeta_inexistente_123/x.json";
 
-		let mut p = PlayList::new(&"asd".to_string(),path_imposible);
-        let c1 = Cancion::new(&String::from("pepe"), &String::from("pepito"), &Generos::Rap);
+		let mut p = PlayList::new(&"asd",path_imposible);
+        let c1 = Cancion::new(&"pepe", &"pepito", Generos::Rap);
         
 		// Al intentar agregar el elemento, llamará internamente a File::create() en la ruta rota, provocando un ErrorIO
 		assert!(p.agregar_cancion(c1).is_err_and(|e|{

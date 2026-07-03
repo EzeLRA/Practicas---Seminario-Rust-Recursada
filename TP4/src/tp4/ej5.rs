@@ -648,15 +648,13 @@ impl Plataforma{
 
             let mut contador : HashMap<String,u32> = HashMap::new();
 
-            for comprobante in &self.registro_transacciones {
-                if comprobante.es_tipo_compra() {
-                    if let Some(nombre) = comprobante.obtener_nombre_criptomoneda() {
-                
-                        *contador.entry(nombre.clone()).or_insert(0) += 1;
-                        
-                    }
+            self.registro_transacciones.iter().filter(|c| c.es_tipo_compra())
+            .for_each(|comprobante|{
+                if let Some(nombre) = comprobante.obtener_nombre_criptomoneda() {
+                    *contador.entry(nombre.clone()).or_insert(0) += 1;
+            
                 }
-            }
+            });
             
             res = contador.into_iter().max_by_key(|&(_,cant)| cant).map(|(nom,_)|nom);
         }
@@ -671,15 +669,13 @@ impl Plataforma{
 
             let mut contador : HashMap<String,u32> = HashMap::new();
 
-            for comprobante in &self.registro_transacciones {
-                if comprobante.es_tipo_venta() {
-                    if let Some(nombre) = comprobante.obtener_nombre_criptomoneda() {
-                
-                        *contador.entry(nombre.clone()).or_insert(0) += 1;
-                        
-                    }
+            self.registro_transacciones.iter().filter(|c| c.es_tipo_venta())
+            .for_each(|comprobante|{
+                if let Some(nombre) = comprobante.obtener_nombre_criptomoneda() {
+                    *contador.entry(nombre.clone()).or_insert(0) += 1;
+            
                 }
-            }
+            });
             
             res = contador.into_iter().max_by_key(|&(_,cant)| cant).map(|(nom,_)|nom);
 
@@ -695,16 +691,14 @@ impl Plataforma{
 
             let mut contador : HashMap<String,f64> = HashMap::new();
 
-            for comprobante in &self.registro_transacciones {
-                if comprobante.es_tipo_compra() {
-                    if let Some(nombre) = comprobante.obtener_nombre_criptomoneda() {
-                        if let Some(monto) = comprobante.obtener_volumen_criptomoneda(){
-                            *contador.entry(nombre.clone()).or_insert(0.0) += monto;
-                        }
-                        
-                    }
+            self.registro_transacciones.iter().filter(|c|c.es_tipo_compra())
+            .for_each(|comprobante|{
+                if let Some(nombre) = comprobante.obtener_nombre_criptomoneda() {
+                    if let Some(monto) = comprobante.obtener_volumen_criptomoneda(){
+                        *contador.entry(nombre.clone()).or_insert(0.0) += monto;
+                    }        
                 }
-            }
+            });
             
             res = contador.into_iter().fold(None, |max_actual: Option<(String, f64)>, (nom, monto)| {
                 match max_actual {
@@ -730,16 +724,14 @@ impl Plataforma{
 
             let mut contador : HashMap<String,f64> = HashMap::new();
 
-            for comprobante in &self.registro_transacciones {
-                if comprobante.es_tipo_venta() {
-                    if let Some(nombre) = comprobante.obtener_nombre_criptomoneda() {
-                        if let Some(monto) = comprobante.obtener_volumen_criptomoneda(){
-                            *contador.entry(nombre.clone()).or_insert(0.0) += monto;
-                        }
-                        
-                    }
+            self.registro_transacciones.iter().filter(|c|c.es_tipo_venta())
+            .for_each(|comprobante|{
+                if let Some(nombre) = comprobante.obtener_nombre_criptomoneda() {
+                    if let Some(monto) = comprobante.obtener_volumen_criptomoneda(){
+                        *contador.entry(nombre.clone()).or_insert(0.0) += monto;
+                    }        
                 }
-            }
+            });
             
             res = contador.into_iter().fold(None, |max_actual: Option<(String, f64)>, (nom, monto)| {
                 match max_actual {

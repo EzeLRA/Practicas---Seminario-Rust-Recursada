@@ -129,13 +129,13 @@ struct ConcesionarioAuto{
 //Metodos
 impl Auto{
 	
-	pub fn new(nom:&String,model:&String,anio_in:u32,precio:f32,color_in:&Colores)->Auto{
+	pub fn new(nom:&str,model:&str,anio_in:u32,precio:f32,color_in:Colores)->Auto{
 		return Auto{
-			marca : nom.clone(),
-			modelo : model.clone(),
+			marca : nom.to_string(),
+			modelo : model.to_string(),
 			anio : anio_in,
 			precio_bruto : precio,
-			color : color_in.clone()
+			color : color_in
 		}
 	}
 
@@ -161,11 +161,11 @@ impl Auto{
 	}
 
 	//Metodos secundarios
-	pub fn get_marca(&self)->String{
-		return self.marca.clone()
+	pub fn get_marca(&self)->&String{
+		return &self.marca
 	}
-	pub fn get_modelo(&self)->String{
-		return self.modelo.clone()
+	pub fn get_modelo(&self)->&String{
+		return &self.modelo
 	}
 	pub fn get_anio(&self)->u32{
 		return self.anio
@@ -173,31 +173,31 @@ impl Auto{
 	pub fn get_precio_bruto(&self)->f32{
 		return self.precio_bruto
 	}
-	pub fn get_color(&self)->Colores{
-		return self.color.clone()
+	pub fn get_color(&self)->&Colores{
+		return &self.color
 	}
 	pub fn es_igual_a(&self,a:&Auto)->bool{
-		return (self.marca == a.get_marca())&&(self.modelo == a.get_modelo())&&(self.anio == a.get_anio())&&(self.precio_bruto == a.get_precio_bruto())&&(self.color.es_igual_a(&a.get_color()));
+		return (&self.marca == a.get_marca())&&(&self.modelo == a.get_modelo())&&(self.anio == a.get_anio())&&(self.precio_bruto == a.get_precio_bruto())&&(self.color.es_igual_a(&a.get_color()));
 	}
 
 }
 
 impl ConcesionarioAuto{
 	//Metodos secundarios
-	pub fn get_nombre(&self)->String{
-		return self.nombre.clone()
+	pub fn get_nombre(&self)->&String{
+		return &self.nombre
 	}
-	pub fn get_direccion(&self)->String{
-		return self.direccion.clone()
+	pub fn get_direccion(&self)->&String{
+		return &self.direccion
 	}
 	pub fn get_capacidad(&self)->u32{
 		return self.capacidad
 	}
 	pub fn es_igual_a(&self,c:&ConcesionarioAuto)->bool{
-		return (self.nombre == c.get_nombre())&&(self.direccion == c.get_direccion())&&(self.capacidad == c.get_capacidad());
+		return (&self.nombre == c.get_nombre())&&(&self.direccion == c.get_direccion())&&(self.capacidad == c.get_capacidad());
 	}
 	//Metodos primarios
-	pub fn new(nom:&String,dir:&String,cant:u32,path_in:&str)->ConcesionarioAuto{
+	pub fn new(nom:&str,dir:&str,cant:u32,path_in:&str)->ConcesionarioAuto{
 		let autos_lista : Vec<Auto> = match ConcesionarioAuto::recuperar_informacion(&path_in){
 			Ok(dato) => {
                 dato
@@ -207,8 +207,8 @@ impl ConcesionarioAuto{
             }
 		};
 		return ConcesionarioAuto{
-			nombre : nom.clone(),
-			direccion : dir.clone(),
+			nombre : nom.to_string(),
+			direccion : dir.to_string(),
 			capacidad : cant,
 			autos: autos_lista,
 			path: path_in.to_string()
@@ -240,7 +240,7 @@ impl ConcesionarioAuto{
 			self.guardar_informacion()?;
 			return Ok(())
 		}
-		return Err(Errores::ErrorCapacidad(error_capacidad(self.get_nombre())));
+		return Err(Errores::ErrorCapacidad(error_capacidad(self.get_nombre().clone())));
 	}
 	//Elimina un auto con las caracteristicas exactas
 	pub fn eliminar_auto(&mut self,a1:&Auto)->Result<(), Errores>{
@@ -257,9 +257,9 @@ impl ConcesionarioAuto{
 				self.guardar_informacion()?;
 				return Ok(())
 			}
-			return Err(Errores::ErrorBaja(error_baja::Inexistente(self.get_nombre())))
+			return Err(Errores::ErrorBaja(error_baja::Inexistente(self.get_nombre().clone())))
 		}
-		return Err(Errores::ErrorBaja(error_baja::EstructuraVacia(self.get_nombre())))
+		return Err(Errores::ErrorBaja(error_baja::EstructuraVacia(self.get_nombre().clone())))
 	}
 	
 	//Busca un auto con las caracteristicas exactas
@@ -287,51 +287,51 @@ mod testing_ejercicio1{
 
 	#[test]
 	fn creacion_auto(){
-		let a = Auto::new(&String::from("asdf"),&String::from("aytuiy"),2023,100432.0,&Colores::Rojo);
-		assert_eq!(a.es_igual_a(&Auto::new(&String::from("asdf"),&String::from("aytuiy"),2023,100432.0,&Colores::Rojo)),true);
+		let a = Auto::new(&"asdf",&"aytuiy",2023,100432.0,Colores::Rojo);
+		assert_eq!(a.es_igual_a(&Auto::new(&"asdf",&"aytuiy",2023,100432.0,Colores::Rojo)),true);
 	}
 
 	#[test]
 	fn calculo_precio_auto(){
 		//Identificar colores primarios
-		let a1 = Auto::new(&String::from("asd"),&String::from("aytuiy"),2023,100000.0,&Colores::Rojo);
+		let a1 = Auto::new(&"asd",&"aytuiy",2023,100000.0,Colores::Rojo);
 		assert_eq!(a1.calcular_precio(), 125000.0);
 
-		let a1 = Auto::new(&String::from("asd"),&String::from("aytuiy"),2023,200000.0,&Colores::Azul);
+		let a1 = Auto::new(&"asd",&"aytuiy",2023,200000.0,Colores::Azul);
 		assert_eq!(a1.calcular_precio(), 250000.0);
 
-		let a1 = Auto::new(&String::from("asd"),&String::from("aytuiy"),2023,300000.0,&Colores::Amarillo);
+		let a1 = Auto::new(&"asd",&"aytuiy",2023,300000.0,Colores::Amarillo);
 		assert_eq!(a1.calcular_precio(), 375000.0);
 		
 		
 		//Identificar colores secundarios
-		let a2 = Auto::new(&String::from("asd"),&String::from("aytuiy"),2023,100000.0,&Colores::Verde);
+		let a2 = Auto::new(&"asd",&"aytuiy",2023,100000.0,Colores::Verde);
 		assert_eq!(a2.calcular_precio(), 90000.0);
 
-		let a2 = Auto::new(&String::from("asd"),&String::from("aytuiy"),2023,50000.0,&Colores::Blanco);
+		let a2 = Auto::new(&"asd",&"aytuiy",2023,50000.0,Colores::Blanco);
 		assert_eq!(a2.calcular_precio(), 45000.0);
 
-		let a2 = Auto::new(&String::from("asd"),&String::from("aytuiy"),2023,15000.0,&Colores::Negro);
+		let a2 = Auto::new(&"asd",&"aytuiy",2023,15000.0,Colores::Negro);
 		assert_eq!(a2.calcular_precio(), 13500.0);
 		
 		
 		//Identificar marca y conjunto de colores
-		let a_bmw = Auto::new(&String::from("BMW"),&String::from("aytuiy"),2023,100000.0,&Colores::Verde);
+		let a_bmw = Auto::new(&"BMW",&"aytuiy",2023,100000.0,Colores::Verde);
 		assert_eq!(a_bmw.calcular_precio(), 105000.0);
 
-		let a_bmw = Auto::new(&String::from("BMW"),&String::from("aytuiy"),2023,200000.0,&Colores::Amarillo);
+		let a_bmw = Auto::new(&"BMW",&"aytuiy",2023,200000.0,Colores::Amarillo);
 		assert_eq!(a_bmw.calcular_precio(), 280000.0);
 
 
 		//Identificar antigüedad y conjunto de colores
-		let a_antiguo = Auto::new(&String::from("asd"),&String::from("aytuiy"),2000,100000.0,&Colores::Rojo);
+		let a_antiguo = Auto::new(&"asd",&"aytuiy",2000,100000.0,Colores::Rojo);
 		assert_eq!(a_antiguo.calcular_precio(), 125000.0);
 
-		let a_antiguo = Auto::new(&String::from("asd"),&String::from("aytuiy"),1999,100000.0,&Colores::Amarillo);
+		let a_antiguo = Auto::new(&"asd",&"aytuiy",1999,100000.0,Colores::Amarillo);
 		assert_eq!(a_antiguo.calcular_precio(), 120000.0);
 
 		//Reconocer condiciones mixtas
-		let a_mixto = Auto::new(&String::from("BMW"),&String::from("aytuiy"),1995,100000.0,&Colores::Amarillo);
+		let a_mixto = Auto::new(&"BMW",&"aytuiy",1995,100000.0,Colores::Amarillo);
 		assert_eq!(a_mixto.calcular_precio(), 135000.0);
 	}
 
@@ -341,10 +341,10 @@ mod testing_ejercicio1{
 
 	fn crear_conjunto_autos()->Vec<Auto>{
 		let mut res = Vec::new();
-		let auto1 = Auto::new(&String::from("BMW"),&String::from("a234"),1995,100000.0,&Colores::Amarillo);
-		let auto2 = Auto::new(&String::from("Piolita"),&String::from("b321"),1999,100000.0,&Colores::Verde);
-		let auto3 = Auto::new(&String::from("Tesla"),&String::from("c521"),2020,1000000.0,&Colores::Negro);
-		let auto4 = Auto::new(&String::from("Tojota"),&String::from("f931"),2019,500000.0,&Colores::Rojo);
+		let auto1 = Auto::new(&"BMW",&"a234",1995,100000.0,Colores::Amarillo);
+		let auto2 = Auto::new(&"Piolita",&"b321",1999,100000.0,Colores::Verde);
+		let auto3 = Auto::new(&"Tesla",&"c521",2020,1000000.0,Colores::Negro);
+		let auto4 = Auto::new(&"Tojota",&"f931",2019,500000.0,Colores::Rojo);
 		res.push(auto1);
 		res.push(auto2);
 		res.push(auto3);
@@ -354,13 +354,13 @@ mod testing_ejercicio1{
 
 	#[test]
 	fn creacion_consecionaria(){
-		let conse1 = ConcesionarioAuto::new(&"Conse1".to_string(),&"Av1".to_string(),4,"./lista_autos.json");
-		assert_eq!(conse1.es_igual_a(&ConcesionarioAuto::new(&"Conse1".to_string(),&"Av1".to_string(),4,"./lista_autos.json")),true);
+		let conse1 = ConcesionarioAuto::new(&"Conse1",&"Av1",4,"./lista_autos.json");
+		assert_eq!(conse1.es_igual_a(&ConcesionarioAuto::new(&"Conse1",&"Av1",4,"./lista_autos.json")),true);
 	}
 
 	#[test]
 	fn operatoria_consecionaria(){
-		let mut conse1 = ConcesionarioAuto::new(&"Conse1".to_string(),&"Av1".to_string(),4,"./lista_autos.json");
+		let mut conse1 = ConcesionarioAuto::new(&"Conse1",&"Av1",4,"./lista_autos.json");
 		//Agregar autos
 		let autos = crear_conjunto_autos();
 		for a in autos{
@@ -368,7 +368,7 @@ mod testing_ejercicio1{
 		}
 
 		//Intentar superar limite de espacio
-		let auto_nuevo = Auto::new(&String::from("Bicho"),&String::from("j221"),2020,1000000.0,&Colores::Negro);
+		let auto_nuevo = Auto::new(&"Bicho",&"j221",2020,1000000.0,Colores::Negro);
 		assert!(conse1.agregar_auto(auto_nuevo.clone()).is_err_and(|e|{
 			//Validar mensaje no nulo
 			assert!(!e.to_string().is_empty());
@@ -384,7 +384,7 @@ mod testing_ejercicio1{
 
 		//Continuar las operaciones con otra consecionaria 
 		//(Demostracion de persistencia - traslado de datos a otra instancia en caso de "cambio")
-		let mut conse2 = ConcesionarioAuto::new(&"Conse2".to_string(),&"Av2".to_string(),4,"./lista_autos.json");
+		let mut conse2 = ConcesionarioAuto::new(&"Conse2",&"Av2",4,"./lista_autos.json");
 
 		//Eliminar todos los autos
 		let autos = crear_conjunto_autos();
@@ -395,14 +395,10 @@ mod testing_ejercicio1{
 		assert!(conse2.eliminar_auto(&auto_nuevo).is_err_and(|e| matches!(e, Errores::ErrorBaja(_))),"Aquí debió fallar el eliminar un auto en una estructura vacia");
 
 		//Agregar y buscar un nuevo auto
-		let auto_nuevo = Auto::new(&String::from("Bichito"),&String::from("j221"),2020,1000000.0,&Colores::Negro);
+		let auto_nuevo = Auto::new(&"Bichito",&"j221",2020,1000000.0,Colores::Negro);
 		assert!(conse2.agregar_auto(auto_nuevo.clone()).is_ok(),"Aqui no debio fallar");
 
-		if let Some(a) = conse2.buscar_auto(&auto_nuevo){
-			assert_eq!(a.es_igual_a(&auto_nuevo),true);
-		}else{
-			panic!("Aqui no tendria que haber fallado");
-		}
+		assert!(conse2.buscar_auto(&auto_nuevo).is_some_and(|a|a.es_igual_a(&auto_nuevo)) ,"Aqui no tendria que haber fallado");
 
 		assert!(conse2.eliminar_auto(&auto_nuevo).is_ok(),"Aqui no debio fallar");
 		assert_eq!(conse2.buscar_auto(&auto_nuevo).is_none(),true);
@@ -416,8 +412,8 @@ mod testing_ejercicio1{
 		// Se buscara forzar un ErrorIO usando una ruta cuyo directorio base NO EXISTE
 		let path_imposible = "./carpeta_inexistente_123/autos.json";
 
-		let mut conse = ConcesionarioAuto::new(&"ConseBackRoom".to_string(), &"Av 67".to_string(), 5, path_imposible);
-		let auto = Auto::new(&"Ford".to_string(), &"Ka".to_string(), 2015, 60000.0, &Colores::Verde);
+		let mut conse = ConcesionarioAuto::new(&"ConseBackRoom", &"Av 67", 5, path_imposible);
+		let auto = Auto::new(&"Ford", &"Ka", 2015, 60000.0, Colores::Verde);
 
 		// Al intentar agregar el auto, llamará internamente a File::create() en la ruta rota, provocando un ErrorIO
 		assert!(conse.agregar_auto(auto).is_err_and(|e|{
