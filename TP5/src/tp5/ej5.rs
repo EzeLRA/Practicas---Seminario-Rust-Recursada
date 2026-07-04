@@ -259,39 +259,32 @@ impl Plataforma{
 	pub fn upgrade(&mut self,u:&Usuario)->Result<(),Errores>{
 
 		if self.usuario_en_sistema(u.get_dni()){
-			let mut dato = None;
 
 			if let Some(sus) = self.registro_suscripciones.iter_mut().rev().find(|s| s.dni_igual(u.get_dni()) && s.activo){
 				let mut sus_nuevo = sus.clone();
 				if sus_nuevo.upgrade_tipo(){
 					sus.cancelar_suscripcion();
-					dato = Some(sus_nuevo);
+					self.registro_suscripciones.push(sus_nuevo);
+					self.guardar_informacion()?;
+					return Ok(())
 				}
+				return Err(Errores::ErrorOperatoria(error_operatoria::Rechazado(String::from("limite alcanzado para hacer upgrade"))))
 			}
-
-			if let Some(sus_nuevo) = dato{
-				self.registro_suscripciones.push(sus_nuevo);
-				self.guardar_informacion()?;
-				return Ok(())
-			}
-			return Err(Errores::ErrorOperatoria(error_operatoria::Rechazado(String::from("limite alcanzado para hacer upgrade o sin suscripciones activas"))))
+			return Err(Errores::ErrorOperatoria(error_operatoria::Rechazado(String::from("sin suscripciones activas"))))
 		}
 		return Err(Errores::ErrorOperatoria(error_operatoria::Inexistente(String::from("Registro de usuarios"))))
 	}
 	pub fn downgrade(&mut self,u:&Usuario)->Result<(),Errores>{
 		
 		if self.usuario_en_sistema(u.get_dni()){
-			let mut dato = None;
 
 			if let Some(sus) = self.registro_suscripciones.iter_mut().rev().find(|s| s.dni_igual(u.get_dni()) && s.activo){
 				let mut sus_nuevo = sus.clone();
 				sus.cancelar_suscripcion();
 				if sus_nuevo.downgrade_tipo(){
-					dato = Some(sus_nuevo);
+					self.registro_suscripciones.push(sus_nuevo);
 				}
-			}
-			if let Some(sus_nuevo) = dato {
-				self.registro_suscripciones.push(sus_nuevo);
+				
 				self.guardar_informacion()?;
 				return Ok(())
 			}
@@ -446,42 +439,54 @@ mod test_ejercicio3{
         assert!(std::fs::remove_file("./lista_suscripciones.json").is_ok(),"Error fuera de lo previsto");
 	}
 
-	/* 
+	
 	#[test]
 	fn registro_operatoria(){
-		let mut sistema = Plataforma::new();
+		let mut sistema = Plataforma::new("./lista_suscripciones2.json");
 		let mut user1 = Usuario::new(&"Patricio", 12345);
 		let mut user2 = Usuario::new(&"Patricio",1234);
 		
 		sistema.registrar_usuario(&user1);
 		sistema.registrar_usuario(&user2);
 
+		//Suscripcion para user2
 		let mut s1 = ContratoSuscripcion::new(1234, &TipoSuscripcion::Basic, 1000.0, 5, 200125, &MediosDePago::Efectivo);
+		//Suscripcion para user1
 		let mut s2 = ContratoSuscripcion::new(12345, &TipoSuscripcion::Super, 5000.0, 5, 200125, &MediosDePago::Efectivo);
 	
-		sistema.registrar_contrato(&s1);
-		sistema.registrar_contrato(&s2);
+		assert!(sistema.registrar_contrato(&s1).is_ok());
+		assert!(sistema.registrar_contrato(&s2).is_ok());
 
-		assert!(sistema.downgrade(&user2));
-		assert!(!sistema.upgrade(&user1));
+		assert!(sistema.downgrade(&user2).is_ok());
+		assert!(sistema.upgrade(&user1).is_err_and(|e|{
+			assert!(!e.to_string().is_empty());
+			matches!(e,Errores::ErrorOperatoria(error_operatoria::Rechazado(_)))
+		}));
 
 		assert_eq!(sistema.registro_suscripciones.len(),2);
 
-		assert!(!sistema.upgrade(&user2));
-		assert!(sistema.downgrade(&user1));
-		assert!(sistema.downgrade(&user1));
+		assert!(sistema.upgrade(&user2).is_err_and(|e|{
+			assert!(!e.to_string().is_empty());
+			matches!(e,Errores::ErrorOperatoria(error_operatoria::Rechazado(_)))
+		}));
+		assert!(sistema.downgrade(&user1).is_ok());
+		assert!(sistema.downgrade(&user1).is_ok());
 
 		s1 = ContratoSuscripcion::new(1234, &TipoSuscripcion::Clasic, 2500.0, 5, 200125, &MediosDePago::Efectivo);
-		sistema.registrar_contrato(&s1);
-		assert!(sistema.cancelar_suscripcion(&user1));
+		assert!(sistema.registrar_contrato(&s1).is_ok());
+		assert!(sistema.cancelar_suscripcion(&user1).is_ok());
 
 		assert_eq!(sistema.registro_suscripciones.len(),5);
 		assert_eq!(sistema.listado_suscripciones(true).len(),1);
 		assert_eq!(sistema.listado_suscripciones(false).len(),4);
-	}
 
-	fn construir_sistema()->Plataforma{
-		let mut sistema = Plataforma::new();
+		//Limpieza para prevenir acumulacion de archivos
+        assert!(std::fs::remove_file("./lista_suscripciones2.json").is_ok(),"Error fuera de lo previsto");
+	
+	} 
+	
+	fn construir_sistema()->Result<Plataforma,Errores>{
+		let mut sistema = Plataforma::new("./lista_suscripciones3.json");
 		let user1 = Usuario::new(&"Patricio", 12345);
 		let user2 = Usuario::new(&"Patricio",1234);
 		let user3 = Usuario::new(&"Matias", 4554);
@@ -497,17 +502,17 @@ mod test_ejercicio3{
 		let s3 = ContratoSuscripcion::new(4554, &TipoSuscripcion::Basic, 1000.0, 5, 200125, &MediosDePago::Criptomoneda(InfoCripto { wallet_address : "asd2354tg42t".to_string(), red: "%#1234".to_string() }));
 		let s4 = ContratoSuscripcion::new(3487, &TipoSuscripcion::Basic, 1000.0, 5, 200125, &MediosDePago::Efectivo);
 
-		sistema.registrar_contrato(&s1);
-		sistema.registrar_contrato(&s2);
-		sistema.registrar_contrato(&s3);
-		sistema.registrar_contrato(&s4);
+		sistema.registrar_contrato(&s1)?;
+		sistema.registrar_contrato(&s2)?;
+		sistema.registrar_contrato(&s3)?;
+		sistema.registrar_contrato(&s4)?;
 
-		return sistema
+		return Ok(sistema)
 	}
 
 	#[test]
 	fn validacion_maximos(){
-		let mut sis = Plataforma::new();
+		let mut sis = Plataforma::new("./lista_suscripciones_vacio.json");
 
 		//Plataforma vacia
 		assert!(sis.metodopago_max_suscripciones_activas().is_none());
@@ -515,52 +520,93 @@ mod test_ejercicio3{
 		assert!(sis.metodopago_max_suscripciones_inactivas().is_none());
 		assert!(sis.tipo_suscripcion_max_inactivas().is_none());
 
-		sis = construir_sistema();
+		assert!(construir_sistema().is_ok_and(|s|{
+			sis = s;
+			true
+		}),"Aqui no debio fallar");
 
 		//Suscripciones activas
-		if let Some(max) = sis.metodopago_max_suscripciones_activas(){
-			assert_eq!(max,MediosDePago::Efectivo);
-		}else{
-			panic!("Debio de retornar un maximo");
-		}
-		if let Some(max) = sis.tipo_suscripcion_max_activas(){
-			assert_eq!(max,TipoSuscripcion::Basic);
-		}else{
-			panic!("Debio de retornar un maximo");
-		}
+		assert!(sis.metodopago_max_suscripciones_activas().is_some_and(|res|{
+			matches!(res,MediosDePago::Efectivo)
+		}),"Debio retornar un maximo");
+
+		assert!(sis.tipo_suscripcion_max_activas().is_some_and(|res|{
+			matches!(res,TipoSuscripcion::Basic)
+		}),"Debio retornar un maximo");
+
 		assert!(sis.metodopago_max_suscripciones_inactivas().is_none());
 		assert!(sis.tipo_suscripcion_max_inactivas().is_none());
-
+		
 		//Con registro de operaciones con suscripciones
-		sis.downgrade(&Usuario::new(&"Patricio", 12345)); 
-		sis.downgrade(&Usuario::new(&"Patricio", 1234));
-		sis.upgrade(&Usuario::new(&"Matias", 4554));
-		sis.upgrade(&Usuario::new(&"David",3487));
-		sis.upgrade(&Usuario::new(&"David",3487));
-		sis.cancelar_suscripcion(&Usuario::new(&"David",3487));
+		assert!(sis.downgrade(&Usuario::new(&"Patricio", 12345)).is_ok());
+		assert!(sis.downgrade(&Usuario::new(&"Patricio", 1234)).is_ok());
+		assert!(sis.upgrade(&Usuario::new(&"Matias", 4554)).is_ok());
+		assert!(sis.upgrade(&Usuario::new(&"David",3487)).is_ok());
+		assert!(sis.upgrade(&Usuario::new(&"David",3487)).is_ok());
+		assert!(sis.cancelar_suscripcion(&Usuario::new(&"David",3487)).is_ok());
 
 		//Activas
-		if let Some(max) = sis.metodopago_max_suscripciones_activas(){
-			assert!(matches!(max, MediosDePago::Criptomoneda(..)));
-		}else{
-			panic!("Debio de retornar un maximo");
-		}
-		if let Some(max) = sis.tipo_suscripcion_max_activas(){
-			assert_eq!(max,TipoSuscripcion::Clasic);
-		}else{
-			panic!("Debio de retornar un maximo");
-		}
+		assert!(sis.metodopago_max_suscripciones_activas().is_some_and(|res|{
+			matches!(res,MediosDePago::Criptomoneda(_))
+		}),"Debio retornar un maximo");
+
+		assert!(sis.tipo_suscripcion_max_activas().is_some_and(|res|{
+			matches!(res,TipoSuscripcion::Clasic)
+		}),"Debio retornar un maximo");
+
 		//Inactivas
-		if let Some(max) = sis.metodopago_max_suscripciones_inactivas(){
-			assert!(matches!(max, MediosDePago::Efectivo));
-		}else{
-			panic!("Debio de retornar un maximo");
-		}
-		if let Some(max) = sis.tipo_suscripcion_max_inactivas(){
-			assert_eq!(max,TipoSuscripcion::Basic);
-		}else{
-			panic!("Debio de retornar un maximo");
-		}
+		assert!(sis.metodopago_max_suscripciones_inactivas().is_some_and(|res|{
+			matches!(res,MediosDePago::Efectivo)
+		}),"Debio retornar un maximo");
+
+		assert!(sis.tipo_suscripcion_max_inactivas().is_some_and(|res|{
+			matches!(res,TipoSuscripcion::Basic)
+		}),"Debio retornar un maximo");
+		
+		//Limpieza para prevenir exceso de archivos
+		assert!(std::fs::remove_file("./lista_suscripciones3.json").is_ok(),"Error fuera de lo previsto");
 	}
+
+	/*
+		Casos especiales para la cobertura de coverage
 	*/
+	#[test]
+	fn caso_especial_error_io_() {
+		// Se buscara forzar un ErrorIO usando una ruta cuyo directorio base no existe
+		let path_err = "./carpeta_inexistente_123/x.json";
+
+		let mut sis = Plataforma::new(path_err);
+        let user1 = Usuario::new(&"Patricio", 12345);
+
+		sis.registrar_usuario(&user1);
+		
+		let s1 = ContratoSuscripcion::new(12345, &TipoSuscripcion::Basic, 1000.0, 5, 200125, &MediosDePago::Efectivo);
+	
+        // Al intentar registrar una suscripcion, llamará internamente a File::create() en la ruta rota, provocando un ErrorIO
+        
+		assert!(sis.registrar_contrato(&s1).is_err_and(|e|{
+                assert!(!e.to_string().is_empty());
+			    matches!(e, Errores::ErrorIO(_))
+        }),"Ocurrio un error imprevisto");
+	}
+
+
+	#[test]
+	fn caso_especial_error_serde() {
+		let path_err = "./corrupto.json";
+		
+		// Se fuerza la escritura en el contenido temporal que NO cumple con el formato estructurado de un .JSON válido
+		assert!(std::fs::write(path_err, "{ &&5435#$#$&42365_XXXX1234 : [::: ").is_ok(),"No debio fallar aqui");
+
+		// Se invoca directamente el método para leer el archivo del path que buscara
+
+		assert!(Plataforma::recuperar_informacion(path_err).is_err_and(|e|{
+			assert!(!e.to_string().is_empty());
+			matches!(e, Errores::ErrorSerde(_))
+		}),"Aquí debió fallar");
+
+		assert!(std::fs::remove_file(path_err).is_ok(),"Error fuera de lo previsto");
+		
+	}
+	
 }

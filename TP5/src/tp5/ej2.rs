@@ -303,7 +303,7 @@ mod testing_ejercicio8{
     }
     #[test]
     fn listado_canciones(){
-        let mut p = PlayList::new(&"asd","./lista_canciones.json");
+        let mut p = PlayList::new(&"asd","./lista_canciones2.json");
         let c1 = Cancion::new(&"pepe", &"pepito", Generos::Rap);
         let c4 = Cancion::new(&"pepesito", &"pepito", Generos::Jazz);
         let c2 = Cancion::new(&"donPepe", &"donPepito", Generos::Rap);
@@ -337,7 +337,7 @@ mod testing_ejercicio8{
 	*/
 	#[test]
 	fn caso_especial_error_io() {
-		// Se buscara forzar un ErrorIO usando una ruta cuyo directorio base NO EXISTE
+		// Se buscara forzar un ErrorIO usando una ruta cuyo directorio base no existe
 		let path_imposible = "./carpeta_inexistente_123/x.json";
 
 		let mut p = PlayList::new(&"asd",path_imposible);

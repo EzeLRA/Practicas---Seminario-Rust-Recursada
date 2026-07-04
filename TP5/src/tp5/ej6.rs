@@ -1269,4 +1269,63 @@ mod test_ejercicio5{
 
     }
     
+    /*
+		Casos especiales para la cobertura de coverage
+	*/
+	#[test]
+	fn caso_especial_error_io_balances() {
+		// Se buscara forzar un ErrorIO usando una ruta cuyo directorio base no existe
+		let path_err = "./carpeta_inexistente_123/x.json";
+
+        let mut sis1 = Plataforma::new(path_err,"./lista_transacciones4.json");
+        let datos = DatosPersona{nombre : "Marcos".to_string(),apellido : "Deltodo".to_string(),email : "exmpl@example.com".to_string(),dni : 1234876};
+        let mut us1 = Usuario::new(&datos.nombre,&datos.apellido,&datos.email,datos.dni);
+
+        // Al intentar crear una wallet, llamará internamente a File::create() en la ruta rota, provocando un ErrorIO
+		assert!(sis1.registrar_usuario(us1).is_err_and(|e|{
+                assert!(!e.to_string().is_empty());
+			    matches!(e, Errores::ErrorIO(_))
+        }),"Ocurrio un error imprevisto");
+	}
+
+    #[test]
+	fn caso_especial_error_io_transacciones() {
+		// Se buscara forzar un ErrorIO usando una ruta cuyo directorio base no existe
+		let path_err = "./carpeta_inexistente_123/x.json";
+
+		let mut sis1 = Plataforma::new("./equisde.json",path_err);
+        let datos = DatosPersona{nombre : "Marcos".to_string(),apellido : "Deltodo".to_string(),email : "exmpl@example.com".to_string(),dni : 1234876};
+        let mut us1 = Usuario::new(&datos.nombre,&datos.apellido,&datos.email,datos.dni);
+
+        assert!(sis1.registrar_usuario(us1.clone()).is_ok() );
+		assert!(sis1.ingresar_monto_usuario(&us1,Fecha(31, 2, 2026) , 1000.0).is_err_and(|e|{
+                assert!(!e.to_string().is_empty());
+			    matches!(e, Errores::ErrorIO(_))
+        }),"Ocurrio un error imprevisto");
+        assert!(std::fs::remove_file("./equisde.json").is_ok(),"Error fuera de lo previsto");
+
+	}
+
+	#[test]
+	fn caso_especial_error_serde() {
+		let path_err = "./corrupto.json";
+		
+		// Se fuerza la escritura en el contenido temporal que NO cumple con el formato estructurado de un .JSON válido
+		assert!(std::fs::write(path_err, "{ &&5435#$#$&42365_XXXX1234 : [::: ").is_ok(),"No debio fallar aqui");
+
+		// Se invoca directamente el método para leer el archivo del path que buscara
+
+		assert!(Plataforma::recuperar_balances_info(path_err).is_err_and(|e|{
+			assert!(!e.to_string().is_empty());
+			matches!(e, Errores::ErrorSerde(_))
+		}),"Aquí debió fallar");
+
+        assert!(Plataforma::recuperar_transacciones_info(path_err).is_err_and(|e|{
+			assert!(!e.to_string().is_empty());
+			matches!(e, Errores::ErrorSerde(_))
+		}),"Aquí debió fallar");
+
+		assert!(std::fs::remove_file(path_err).is_ok(),"Error fuera de lo previsto");
+		
+	}
 }
