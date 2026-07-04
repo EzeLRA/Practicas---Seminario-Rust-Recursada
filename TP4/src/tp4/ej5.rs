@@ -547,7 +547,7 @@ impl Plataforma{
             
             if let Some(cr) = self.criptomonedas_dispone.iter().find(|&c| &c.0.get_nombre() == &nom){
                 //Compra
-                if (u.is_verificado())&&(u.get_balance_fiat() >= monto_fiat){
+                if u.is_verificado(){
                     let monto_compra = monto_fiat/cr.get_cotiza();
                     completo = u.comprar_criptomoneda(nom,monto_fiat,monto_compra);
 
@@ -629,10 +629,12 @@ impl Plataforma{
     fn retirar_monto_usuario(&mut self,u1:&Usuario,f:Fecha,m:f64,med:MediosPago)->bool{
         let mut completo = false;
         if let Some(u) = self.usuarios.iter_mut().find(|user| user.informacion_correcta(&u1.datos)){
-            if u.is_verificado() && u.retirar_monto_fiat(m){
-                let datos = Datos_Retiro::new(u.datos.clone(), f, m,med);
-                self.registrar_transaccion(TiposTransacciones::RetiroFiat(datos));
-                completo = true;
+            if u.is_verificado() {
+                completo = u.retirar_monto_fiat(m);
+                if completo {
+                    let datos = Datos_Retiro::new(u.datos.clone(), f, m,med);
+                    self.registrar_transaccion(TiposTransacciones::RetiroFiat(datos));
+                }
             }
         }
         return completo;
