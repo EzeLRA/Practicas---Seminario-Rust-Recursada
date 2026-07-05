@@ -83,24 +83,29 @@ pub fn obtener_edades<'a>(vector_p : &Vec<Persona<'a>>)->Vec<u8>{
 
 //Modulo G
 pub fn obtener_salarios_max_min<'a>(vector_p : &Vec<Persona<'a>>)->Option<(Persona<'a>,Persona<'a>)>{
-    let mut res = None;
-    
+    let mut resultado = None;
+	//Verificar si hay elementos para avanzar
     if !vector_p.is_empty(){
-        let mut min = &vector_p[0]; 
-        let mut max = &vector_p[0]; 
-        vector_p.iter().for_each(|persona|{
-            match persona.salario {
-                s if s>max.salario => max = persona,
-                s if s<min.salario => min = persona,
-                s if (s==max.salario) && (persona.edad>max.edad) => max = persona,
-                s if (s==min.salario) && (persona.edad>min.edad) => min = persona,
-                _ => (),
-            }
-        });
-        res = Some((max.clone(),min.clone()));
-    }
+		// Se toma el primer elemento.
+		let primero = vector_p.iter().next()?; 
 
-    return res
+		let res = vector_p.iter().fold((primero, primero), |(max, min), persona| {
+			let nuevo_max = match persona.salario {
+				s if s > max.salario => persona,
+				s if s == max.salario && persona.edad > max.edad => persona,
+				_ => max,
+			};
+			let nuevo_min = match persona.salario {
+				s if s < min.salario => persona,
+				s if s == min.salario && persona.edad > min.edad => persona,
+				_ => min,
+			};
+			(nuevo_max, nuevo_min)
+		});
+
+		resultado = Some((res.0.clone(), res.1.clone()));
+	}
+	return resultado
 }
 
 #[cfg(test)]

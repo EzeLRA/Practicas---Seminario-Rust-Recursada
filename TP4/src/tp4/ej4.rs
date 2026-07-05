@@ -227,25 +227,7 @@ impl Sistema {
 
     pub fn reporte_ventas_por_categoria(&self) -> Option<Reporte<ReporteCategoria>>{
         let mut reporte = HashMap::new();
-        /* 
-        self.ventas.iter().flat_map(|venta|{ 
-            let tiene_descuento = venta.cliente.tiene_newsletter();
-            venta.productos.iter().map(move|p|(tiene_descuento,p))
-        }).for_each(|(descuento_general,p)|{
-            let descuento_categoria = if let Some(porcentaje) = self.descuentos_categorias.get(&p.producto.categoria){*porcentaje}else{0.0};
-            let precio_final_unitario = p.producto.precio_base * (1.0 - (descuento_categoria / 100.0));
-            let mut monto_item = precio_final_unitario * (p.cantidad as f64);
-                
-            // Si la venta global tuvo descuento por newsletter, impacta proporcionalmente al item
-            if descuento_general {
-                monto_item *= 1.0 - (self.descuento_newsletter / 100.0);
-            }
-
-            let total_cat = reporte.entry(p.producto.categoria.clone()).or_insert(0.0);
-            *total_cat += monto_item;
-        });
-        */
-
+        
         self.ventas.iter().for_each(|v|{
             let tiene_descuento = v.cliente.tiene_newsletter();
             v.productos.iter().for_each(|p|{
@@ -277,12 +259,11 @@ impl Sistema {
     pub fn reporte_ventas_por_vendedor(&self) -> Option<Reporte<ReporteVendedor>> {
         let mut reporte = HashMap::new();
         
-        for venta in &self.ventas {
+        self.ventas.iter().for_each(|venta|{
             let monto_venta = self.calcular_precio_final(venta);
             let total_vendedor = reporte.entry(venta.vendedor.legajo).or_insert(0.0);
             *total_vendedor += monto_venta;
-        }
-
+        });
         if !reporte.is_empty(){
             let mut res = Reporte::new();
             reporte.iter().for_each(|r|{
