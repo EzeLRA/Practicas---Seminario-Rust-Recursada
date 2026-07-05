@@ -905,6 +905,7 @@ mod test_ejercicio5{
     fn prueba_criptomoneda(){
         let c = Criptomoneda::new(&"Cripton1".to_string(),&"CRP".to_string());
         assert_eq!(c,Criptomoneda::new(&"Cripton1".to_string(),&"CRP".to_string()));
+        assert!(!c.get_prefijo().is_empty());
         assert!(c.blockchains.is_empty());
     }
 
@@ -1066,6 +1067,13 @@ mod test_ejercicio5{
         //Obtener cotizacion de una criptomoneda
         assert_eq!(sis1.obtener_cotizacion_criptomoneda(&"Cripton".to_string()),1500.0);
 
+        //Intentar validar un usuario inexistente
+        assert!(sis1.validar_usuario(&Usuario::new(&"Pichu", &"Pape", &"pipi@mail.com", 33221)).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
+        }));
+
+        //Operar con un usuario
         assert!(sis1.registrar_usuario(us1.clone()).is_ok());
         assert!(sis1.registrar_usuario(us1.clone()).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
@@ -1110,6 +1118,10 @@ mod test_ejercicio5{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
         }) );
+        assert!(sis1.vender_criptomoneda_usuario(&us1,Fecha(23,05,2025),500.0,&"Cripton2".to_string()).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
+        }) );
         assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha(23,05,2025),2500.0,c3.get_nombre()).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::Denegado(_)))
@@ -1123,6 +1135,49 @@ mod test_ejercicio5{
         assert!(sis1.vender_criptomoneda_usuario(&us1,Fecha(10,08,2025),2.0,c1.get_nombre()).is_ok() );
         assert_eq!(sis1.retornar_fiat_usuario(&us1),14000.0);
         assert!(sis1.registro_transacciones.len() == 7);
+
+        assert!(sis1.retirar_monto_usuario(&us1,Fecha(10,08,26), 14000.1, MediosPago::TransferenciaBancaria).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::Denegado(_)))
+        }));
+
+        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha(23,05,2025),250000.0,c3.get_nombre()).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::Denegado(_)))
+        }));
+
+        assert!(sis1.vender_criptomoneda_usuario(&us1,Fecha(23,05,2025),2500.0,c1.get_nombre()).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::Denegado(_)))
+        }));
+
+        //Rechazar la operacion con criptos si no tiene permiso un usuario o si no existe el mismo
+        let mut us3 = Usuario::new(&"Fulano",&"Queseyo",&"cualquiera@mail.com",1234);
+        assert!(sis1.comprar_criptomoneda_usuario(&us3,Fecha(23,05,2025),250000.0,c3.get_nombre()).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
+        }));
+
+        assert!(sis1.vender_criptomoneda_usuario(&us3,Fecha(23,05,2025),2500.0,c1.get_nombre()).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
+        }));
+        
+        assert!(sis1.registrar_usuario(us3.clone()).is_ok());
+
+        assert!(sis1.retirar_monto_usuario(&us3,Fecha(10,08,26), 14000.1, MediosPago::TransferenciaBancaria).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::SinVerificacion ))
+        }));
+
+        assert!(sis1.comprar_criptomoneda_usuario(&us3,Fecha(23,05,2025),500.0,c1.get_nombre()).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::SinVerificacion))
+        }) );
+        assert!(sis1.vender_criptomoneda_usuario(&us3,Fecha(23,05,2025),500.0,c1.get_nombre()).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::SinVerificacion))
+        }) );
 
         //Limpieza de archivos para prevencion de exceso de los mismos
         assert!(std::fs::remove_file("./lista_balances.json").is_ok(),"Error fuera de lo previsto");
@@ -1175,6 +1230,34 @@ mod test_ejercicio5{
         assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha(23,05,2025),25000.0,c3.get_nombre()).is_ok() );
 
         //Transacciones con blockchains
+
+        //Con usuario inexistente
+        let mut us3 = Usuario::new(&"Memo",&"Teso",&"teso@mail.com",4321);
+        assert!(sis1.criptomoneda_a_blockchain_usuario(&us3,Fecha(23,06,2025),2.0,c1.get_nombre(),&"Bloque1".to_string()).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
+        }) );
+        assert!(sis1.blockchain_a_criptomoneda_usuario(&us3,Fecha(27,08,2025),4.0,c1.get_nombre(),b3.get_nombre()).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
+        }) );
+        //Criptomoneda inexistente
+        assert!(sis1.criptomoneda_a_blockchain_usuario(&us1,Fecha(23,06,2025),2.0,&"CositoCoin".to_string() ,b3.get_nombre()).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
+        }) );
+        assert!(sis1.blockchain_a_criptomoneda_usuario(&us1,Fecha(27,08,2025),4.0,&"CositoCoin".to_string(),b3.get_nombre()).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
+        }) );
+        //Con usuario existente y no verificado
+        assert!(sis1.registrar_usuario(us3.clone()).is_ok());
+        assert!(sis1.criptomoneda_a_blockchain_usuario(&us3,Fecha(23,06,2025),2.0,c1.get_nombre(),b3.get_nombre()).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::SinVerificacion))
+        }) );
+
+        //Con usuario existente y verificado
         assert!(sis1.criptomoneda_a_blockchain_usuario(&us1,Fecha(23,06,2025),2.0,c1.get_nombre(),b1.get_nombre()).is_ok() );
         assert!(sis1.criptomoneda_a_blockchain_usuario(&us1,Fecha(23,06,2025),2.0,c1.get_nombre(),&"Bloque1".to_string()).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
@@ -1269,6 +1352,25 @@ mod test_ejercicio5{
 
     }
     
+    #[test]
+    fn prueba_comprobantes(){
+        let d = DatosPersona { nombre: "asd".to_string(), apellido: "fd".to_string(), email: "asdf".to_string(), dni: 123 };
+        let c1 = Datos_Ingreso::new(d.clone(), Fecha(12, 4, 26), 100.0);
+        assert_eq!(c1.get_fecha(),Fecha(12, 4, 26));
+        assert!(c1.get_monto()>0.0);
+        let c2 = Datos_Retiro::new(d.clone(), Fecha(12,4,26), 100.0, MediosPago::MercadoPago);
+        assert!(matches!(c2.get_medio_pago(),MediosPago::MercadoPago));
+        let c3 = Datos_Operacion_Criptomoneda::new(d.clone(), Fecha(1,1,26), 100.0, Criptomoneda::new("asd", "a"), 100.0);
+        assert!(c3.get_cotizacion()>0.0);
+        assert_eq!(*c3.get_cripto_nom(),"asd".to_string());
+        assert_eq!(*c3.get_criptomoneda().get_nombre(),"asd".to_string());
+        let c4 = Datos_Extraccion_Blockchain::new(d.clone(), Fecha(1,1,26), 10.0, Criptomoneda::new("asd", "a"), 1.0, Blockchain { nombre: "a".to_string(), prefijo: "f".to_string() });
+        assert_eq!(*c4.get_blockchain().get_nombre(),"a".to_string());
+        let c5 = Datos_Retiro_Blockchain::new(d, Fecha(1,1,26), 1.0, Criptomoneda::new("asd", "a"), 2.0, Blockchain { nombre: "a".to_string(), prefijo: "f".to_string() });
+        assert_eq!(*c5.get_blockchain().get_nombre(),"a".to_string());
+        assert!(!c5.get_hash().is_empty());
+    }   
+
     /*
 		Casos especiales para la cobertura de coverage
 	*/

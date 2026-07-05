@@ -238,14 +238,7 @@ impl Plataforma{
 		return true
 	}
 	pub fn registrar_contrato(&mut self,c:&ContratoSuscripcion)->Result<(),Errores>{
-		/* 
-		if (self.usuario_en_sistema(c.dni_usuario))&&(!self.registro_suscripciones.iter().any(|s| s.dni_igual(c.dni_usuario) && s.activo)){
-			self.registro_suscripciones.push(c.clone());
-		}else{
-			return false
-		}
-		return true
-		*/
+		
 		if self.usuario_en_sistema(c.dni_usuario){
 			if !self.registro_suscripciones.iter().any(|s| s.dni_igual(c.dni_usuario) && s.activo){
 				self.registro_suscripciones.push(c.clone());

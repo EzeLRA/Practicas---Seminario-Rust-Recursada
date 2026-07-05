@@ -1106,4 +1106,23 @@ mod test_ejercicio5{
 
     }
 
+    #[test]
+    fn prueba_comprobantes(){
+        let d = DatosPersona { nombre: "asd".to_string(), apellido: "fd".to_string(), email: "asdf".to_string(), dni: 123 };
+        let c1 = Datos_Ingreso::new(d.clone(), Fecha(12, 4, 26), 100.0);
+        assert_eq!(c1.get_fecha(),Fecha(12, 4, 26));
+        assert!(c1.get_monto()>0.0);
+        let c2 = Datos_Retiro::new(d.clone(), Fecha(12,4,26), 100.0, MediosPago::MercadoPago);
+        assert!(matches!(c2.get_medio_pago(),MediosPago::MercadoPago));
+        let c3 = Datos_Operacion_Criptomoneda::new(d.clone(), Fecha(1,1,26), 100.0, Criptomoneda::new("asd", "a"), 100.0);
+        assert!(c3.get_cotizacion()>0.0);
+        assert_eq!(*c3.get_cripto_nom(),"asd".to_string());
+        assert_eq!(*c3.get_criptomoneda().get_nombre(),"asd".to_string());
+        let c4 = Datos_Extraccion_Blockchain::new(d.clone(), Fecha(1,1,26), 10.0, Criptomoneda::new("asd", "a"), 1.0, Blockchain { nombre: "a".to_string(), prefijo: "f".to_string() });
+        assert_eq!(*c4.get_blockchain().get_nombre(),"a".to_string());
+        let c5 = Datos_Retiro_Blockchain::new(d, Fecha(1,1,26), 1.0, Criptomoneda::new("asd", "a"), 2.0, Blockchain { nombre: "a".to_string(), prefijo: "f".to_string() });
+        assert_eq!(*c5.get_blockchain().get_nombre(),"a".to_string());
+        assert!(!c5.get_hash().is_empty());
+    }  
+
 }

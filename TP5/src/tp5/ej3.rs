@@ -582,8 +582,23 @@ mod testing_ejercicio9{
         let d1 = Duenio::new(&"Marcos",&"av2",1234);
         let animal1 = Mascota::new(&"Luchito", 2, Animales::Perro, d1.clone());
         let animal2 = Mascota::new(&"Luchon", 2, Animales::Perro, d1.clone());
-        v.agregar_mascota(animal1);
+        v.agregar_mascota(animal1.clone());
         v.agregar_mascota(animal2);
+
+        //Verificacion de estructura vacia en atenciones
+        let ate_aux = Atencion::new(animal1,&"Pulgas",&"Pipeta",None);
+        assert!(v.modificar_diagnostico(&ate_aux, &"algo".to_string()).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(_)))
+        }));
+        assert!(v.modificar_fecha(&ate_aux, None) .is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(_)))
+        }));
+        assert!(v.eliminar_atencion(&ate_aux).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e,Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(_)))
+        }));
 
         //Primera recepcion
         assert!(v.atender_mascota().is_some_and(|ani|{
@@ -601,7 +616,22 @@ mod testing_ejercicio9{
         let atencion = v.buscar_atencion(&"Luchon".to_string(), &"Marcos".to_string(), 1234).cloned();
         assert!(atencion.is_some_and(|a| {
             assert!(a.mascota.nombre == "Luchon");
-            v.eliminar_atencion(&a).is_ok() 
+            assert!(v.eliminar_atencion(&a).is_ok());
+
+            assert!(v.modificar_diagnostico(&a, &"algo".to_string()).is_err_and(|e|{
+                assert!(!e.to_string().is_empty());
+                matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
+            }));
+            assert!(v.modificar_fecha(&a, None) .is_err_and(|e|{
+                assert!(!e.to_string().is_empty());
+                matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
+            }));
+            assert!(v.eliminar_atencion(&a).is_err_and(|e|{
+                assert!(!e.to_string().is_empty());
+                matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
+            }));
+            
+            true
         }), "No se encontro tal recepcion");
 
         //Búsqueda de la primer atención y modificación de diagnóstico
@@ -629,9 +659,10 @@ mod testing_ejercicio9{
         let atencion = v.buscar_atencion(&"Luchito".to_string(), &"Marcos".to_string(), 1234).cloned();
         assert!(atencion.is_some_and(|a| {
             assert!(a.mascota.nombre == "Luchito");
-            v.eliminar_atencion(&a).is_ok() 
+            v.eliminar_atencion(&a).is_ok()
         }), "No se encontro tal recepcion");
 
+        
     }
 
     /*

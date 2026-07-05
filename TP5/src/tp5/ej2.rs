@@ -294,9 +294,21 @@ mod testing_ejercicio8{
             matches!(e, Errores::ErrorOperatoria(error_operatoria::SinDesplazamiento(_)))
         }),"Aqui debio fallar");
 
+        //Borrar algunas canciones
+        assert!(p.eliminar_cancion(&c3).is_ok());
+        assert!(p.eliminar_cancion(&c3).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e, Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
+        }),"Aqui debio fallar");
+
         //Limpieza completa
         assert!(p.eliminar_canciones().is_ok());
         assert!(p.mover_cancion(&c2,0).is_err_and(|e|{
+            assert!(!e.to_string().is_empty());
+            matches!(e, Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(_)))
+        }),"Aqui debio fallar");
+
+        assert!(p.eliminar_cancion(&c2).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e, Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(_)))
         }),"Aqui debio fallar");
