@@ -288,7 +288,8 @@ impl Fecha{
 	}
 }
 */
-//Estaciones (Cada uno implementara los numeros del mes para usarlo en el filtrado)
+//Estaciones
+#[derive(Eq, Hash, PartialEq,Clone)]
 enum TemporadaAnio{
 	Otonio(u8),
 	Invierno(u8),
@@ -296,24 +297,60 @@ enum TemporadaAnio{
 	Verano(u8) 
 }
 
+impl TemporadaAnio{
+	//los numeros del mes para usarlo en el filtrado segun temporada
+	pub fn identificar_temporada(f:&Fecha)->TemporadaAnio{
+		match f.get_mes() {
+			12|1|2 => TemporadaAnio::Verano(f.get_mes()),
+			3..5 => TemporadaAnio::Otonio(f.get_mes()),
+			6..8 => TemporadaAnio::Invierno(f.get_mes()),
+			9..11 => TemporadaAnio::Primavera(f.get_mes()),
+			_ => TemporadaAnio::Verano(0),
+		}
+	}
+	/*
+	pub fn es_verano(f:&Fecha)->bool{
+		return f.mes == (12 | 1 | 2)
+	}
+	pub fn es_otonio(f:&Fecha)->bool{
+		return f.mes == (3 | 4 | 5)
+ 	}
+	pub fn es_invierno(f:&Fecha)->bool{
+		return f.mes == (6 | 7 | 8)
+	}
+	pub fn es_primavera(f:&Fecha)->bool{
+		return f.mes == (9 | 10 | 11)
+	}*/
+}
+
 //Nuevo struct (EstacionTop) - Corrigo Plataforma -> Estacion 
-//Agrego los traits despues
 struct EstacionTop{
 	cant_suscripciones : u64,
 	temporada : TemporadaAnio ,
-	anio : u64
+	//anio : u64
 }
 
 impl EstacionTop{
-	pub fn new(te:TemporadaAnio,an:u64)->EstacionTop{
+	pub fn new(te:TemporadaAnio/*,an:u64*/)->EstacionTop{
 		return EstacionTop{
 			cant_suscripciones : 0,
 			temporada : te,
-			anio: an
+			//anio: an
 		}
 	}
-	//pub fn es_otonio(&self,f:Fecha)->bool;
-	//.. hacer para las demas temporadas para simplificar el proceso
+	
+	pub fn es_verano(&self,f:&Fecha)->bool{
+		return f.mes == (12 | 1 | 2)
+	}
+	pub fn es_otonio(&self,f:&Fecha)->bool{
+		return f.mes == (3 | 4 | 5)
+ 	}
+	pub fn es_invierno(&self,f:&Fecha)->bool{
+		return f.mes == (6 | 7 | 8)
+	}
+	pub fn es_primavera(&self,f:&Fecha)->bool{
+		return f.mes == (9 | 10 | 11)
+	}
 }
 
 /*
@@ -530,18 +567,23 @@ impl Plataforma{
 	*/
 	pub fn estacion_con_mas_suscripciones(&self)->Option<EstacionTop>{
 		let mut res = None;
-		//Como mi codigo no usa alguna estructura para el campo fecha debere procesar la fecha (mala mia :c)
+
 		let activas = self.listado_suscripciones(true);
 		if !activas.is_empty(){
-			//let fecha = Fecha::convertir_fecha(s.fecha);
-			//let mut suscripciones_tempo : HashMap<EstacionTop,TemporadaAnio> = Vec::new();
+			let mut suscripciones_tempo : HashMap<TemporadaAnio ,EstacionTop> = HashMap::new();
 			//Recorro solo sus activas
 			activas.iter().for_each(|s|{
-				//Recorro y filtro por temporada
-				//Aca tendre que usar la fecha para concretar la temporada 
-				//suscripciones_tempo.insert(..)
-				//Continuar
-			});	
+				//Recorro y filtro por temporada (Contabilizo en la misma)
+				//Como ahora manejo mi struct fecha , verifico si es una fecha valida para hacer el proceso con datos no corruptos
+				if s.fecha_inicio.es_fecha_valida(){
+					let t = TemporadaAnio::identificar_temporada(&s.fecha_inicio);
+					suscripciones_tempo.entry(t.clone()).or_insert(EstacionTop::new(t)).cant_suscripciones += 1;  	
+				}
+				
+			});
+			//Continuacion del codigo
+			//Filtro el maximo
+			res = suscripciones_tempo.into_iter().max_by_key(|(_,e)| e.cant_suscripciones).map(|(_,e)|e);	
 
 		}
 
