@@ -325,31 +325,33 @@ impl TemporadaAnio{
 
 //Nuevo struct (EstacionTop) - Corrigo Plataforma -> Estacion 
 struct EstacionTop{
+	cant_estacion : u64,
 	cant_suscripciones : u64,
 	temporada : TemporadaAnio ,
-	//anio : u64
+	//anio : u64	// Como no tengo que hacer algun calculo o proceso auxiliar para determinar la fecha , no se usa este parametro pero me deja para una funcionalidad futura 
 }
 
 impl EstacionTop{
 	pub fn new(te:TemporadaAnio/*,an:u64*/)->EstacionTop{
 		return EstacionTop{
+			cant_estacion : 0,
 			cant_suscripciones : 0,
 			temporada : te,
-			//anio: an
+			//anio: an  
 		}
 	}
 	
-	pub fn es_verano(&self,f:&Fecha)->bool{
-		return f.mes == (12 | 1 | 2)
+	pub fn es_verano(&self)->bool{
+		return matches!(self.temporada,TemporadaAnio::Verano(_))
 	}
-	pub fn es_otonio(&self,f:&Fecha)->bool{
-		return f.mes == (3 | 4 | 5)
+	pub fn es_otonio(&self)->bool{
+		return matches!(self.temporada,TemporadaAnio::Otonio(_))
  	}
-	pub fn es_invierno(&self,f:&Fecha)->bool{
-		return f.mes == (6 | 7 | 8)
+	pub fn es_invierno(&self)->bool{
+		return matches!(self.temporada,TemporadaAnio::Invierno(_))
 	}
-	pub fn es_primavera(&self,f:&Fecha)->bool{
-		return f.mes == (9 | 10 | 11)
+	pub fn es_primavera(&self)->bool{
+		return matches!(self.temporada,TemporadaAnio::Primavera(_))
 	}
 }
 
@@ -573,7 +575,7 @@ impl Plataforma{
 			let mut suscripciones_tempo : HashMap<TemporadaAnio ,EstacionTop> = HashMap::new();
 			//Recorro solo sus activas
 			activas.iter().for_each(|s|{
-				//Recorro y filtro por temporada (Contabilizo en la misma)
+				//Recorro y filtro por temporada (Contabilizo en la misma para cada mes)
 				//Como ahora manejo mi struct fecha , verifico si es una fecha valida para hacer el proceso con datos no corruptos
 				if s.fecha_inicio.es_fecha_valida(){
 					let t = TemporadaAnio::identificar_temporada(&s.fecha_inicio);
@@ -582,9 +584,30 @@ impl Plataforma{
 				
 			});
 			//Continuacion del codigo
-			//Filtro el maximo
-			res = suscripciones_tempo.into_iter().max_by_key(|(_,e)| e.cant_suscripciones).map(|(_,e)|e);	
-
+			//Contabilizo el total para cada temporada
+			let mut temporadas_cant : HashMap<TemporadaAnio,u64> = HashMap::new();
+			suscripciones_tempo.iter().for_each(|(_,estacion)|{
+				match estacion.temporada{
+					TemporadaAnio::Invierno(_) => {*temporadas_cant.entry(TemporadaAnio::Invierno(0)).or_insert(0) += estacion.cant_suscripciones;},
+					TemporadaAnio::Primavera(_) => {*temporadas_cant.entry(TemporadaAnio::Primavera(0)).or_insert(0) += estacion.cant_suscripciones;},
+					TemporadaAnio::Verano(_) => {*temporadas_cant.entry(TemporadaAnio::Verano(0)).or_insert(0) += estacion.cant_suscripciones;},
+					TemporadaAnio::Otonio(_) => {*temporadas_cant.entry(TemporadaAnio::Otonio(0)).or_insert(0) += estacion.cant_suscripciones;},
+				}
+			});
+			//Retorno la temporada con mas suscripciones
+			let temporada_max = temporadas_cant.iter().max_by_key(|t|t.1)?;
+			//Filtro y proceso la estacion max antes de retornarla
+			let mut estacion_max = suscripciones_tempo.into_iter().filter(|(_,estacion)|{
+				match &temporada_max.0 {
+						TemporadaAnio::Verano(_) => estacion.es_verano(),
+						TemporadaAnio::Otonio(_) => estacion.es_otonio(),
+						TemporadaAnio::Invierno(_) => estacion.es_invierno(),
+						TemporadaAnio::Primavera(_) => estacion.es_primavera(),
+					}
+			}).max_by_key(|t|t.1.cant_suscripciones).map(|t|t.1)?;
+			estacion_max.cant_estacion = *temporada_max.1;
+			res = Some(estacion_max);
+			
 		}
 
 		return res
