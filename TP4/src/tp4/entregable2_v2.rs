@@ -299,28 +299,16 @@ enum TemporadaAnio{
 
 impl TemporadaAnio{
 	//los numeros del mes para usarlo en el filtrado segun temporada
-	pub fn identificar_temporada(f:&Fecha)->TemporadaAnio{
+	pub fn identificar_temporada(f:&Fecha)->Option<TemporadaAnio>{
 		match f.get_mes() {
-			12|1|2 => TemporadaAnio::Verano(f.get_mes()),
-			3..5 => TemporadaAnio::Otonio(f.get_mes()),
-			6..8 => TemporadaAnio::Invierno(f.get_mes()),
-			9..11 => TemporadaAnio::Primavera(f.get_mes()),
-			_ => TemporadaAnio::Verano(0),
+			12|1|2 => Some(TemporadaAnio::Verano(f.get_mes())),
+			3..=5 => Some(TemporadaAnio::Otonio(f.get_mes())),
+			6..=8 => Some(TemporadaAnio::Invierno(f.get_mes())),
+			9..=11 => Some(TemporadaAnio::Primavera(f.get_mes())),
+			_ => None,
 		}
 	}
-	/*
-	pub fn es_verano(f:&Fecha)->bool{
-		return f.mes == (12 | 1 | 2)
-	}
-	pub fn es_otonio(f:&Fecha)->bool{
-		return f.mes == (3 | 4 | 5)
- 	}
-	pub fn es_invierno(f:&Fecha)->bool{
-		return f.mes == (6 | 7 | 8)
-	}
-	pub fn es_primavera(f:&Fecha)->bool{
-		return f.mes == (9 | 10 | 11)
-	}*/
+	
 }
 
 //Nuevo struct (EstacionTop) - Corrigo Plataforma -> Estacion 
@@ -340,7 +328,8 @@ impl EstacionTop{
 			//anio: an  
 		}
 	}
-	
+	//Como no debo hacer un calculo extra para determinar la fecha durante los procesos de filtros
+	//Ademas de que delego el proceso para TemporadaAnio (Filtro temporada-anio-mes que ya propone el rango de los meses). Solamente uso los metodos propuestos aqui para el filtro por temporada 
 	pub fn es_verano(&self)->bool{
 		return matches!(self.temporada,TemporadaAnio::Verano(_))
 	}
@@ -578,8 +567,9 @@ impl Plataforma{
 				//Recorro y filtro por temporada (Contabilizo en la misma para cada mes)
 				//Como ahora manejo mi struct fecha , verifico si es una fecha valida para hacer el proceso con datos no corruptos
 				if s.fecha_inicio.es_fecha_valida(){
-					let t = TemporadaAnio::identificar_temporada(&s.fecha_inicio);
-					suscripciones_tempo.entry(t.clone()).or_insert(EstacionTop::new(t)).cant_suscripciones += 1;  	
+					if let Some(t) = TemporadaAnio::identificar_temporada(&s.fecha_inicio) {
+						suscripciones_tempo.entry(t.clone()).or_insert(EstacionTop::new(t)).cant_suscripciones += 1;
+					}
 				}
 				
 			});
@@ -594,19 +584,21 @@ impl Plataforma{
 					TemporadaAnio::Otonio(_) => {*temporadas_cant.entry(TemporadaAnio::Otonio(0)).or_insert(0) += estacion.cant_suscripciones;},
 				}
 			});
-			//Retorno la temporada con mas suscripciones
-			let temporada_max = temporadas_cant.iter().max_by_key(|t|t.1)?;
-			//Filtro y proceso la estacion max antes de retornarla
-			let mut estacion_max = suscripciones_tempo.into_iter().filter(|(_,estacion)|{
-				match &temporada_max.0 {
+			//Filtro y proceso la estacion con mas suscripciones antes de retornarla al final
+			if let Some(temporada_max) =  temporadas_cant.iter().max_by_key(|t|t.1){
+				if let Some(mut estacion_max) = suscripciones_tempo.into_iter().filter(|(_,estacion)|{
+					match &temporada_max.0 {
 						TemporadaAnio::Verano(_) => estacion.es_verano(),
 						TemporadaAnio::Otonio(_) => estacion.es_otonio(),
 						TemporadaAnio::Invierno(_) => estacion.es_invierno(),
 						TemporadaAnio::Primavera(_) => estacion.es_primavera(),
 					}
-			}).max_by_key(|t|t.1.cant_suscripciones).map(|t|t.1)?;
-			estacion_max.cant_estacion = *temporada_max.1;
-			res = Some(estacion_max);
+				}).max_by_key(|t|t.1.cant_suscripciones).map(|t|t.1){
+					estacion_max.cant_estacion = *temporada_max.1;
+					res = Some(estacion_max);
+				}
+				
+			}
 			
 		}
 
@@ -623,19 +615,95 @@ mod test_entregable2{
 	//listado sin activas
 	#[test]
 	fn sin_reporte1(){
+		let mut sistema = Plataforma::new();
+		
+		//Usuarios
+		let user1 = Usuario::new(&"Paulo", 4592);
+		let user2 = Usuario::new(&"Michael",1844);
+		let user3 = Usuario::new(&"Martin",8890);
+		let user4 = Usuario::new(&"Roman",3190);
+
+		assert!(sistema.registrar_usuario(user1.clone()));
+		assert!(sistema.registrar_usuario(user2.clone()));
+		assert!(sistema.registrar_usuario(user3.clone()));
+		assert!(sistema.registrar_usuario(user4));
+
+		//Suscripciones
+		let mut s1 = ContratoSuscripcion::new(4592,TipoSuscripcion::Basic, 100.0, 2, Fecha::new(12, 6, 2026), MediosDePago::Efectivo);
+		let mut s2 = ContratoSuscripcion::new(1844,TipoSuscripcion::Super, 100.0, 2, Fecha::new(21, 6, 2026), MediosDePago::Efectivo);
+		let mut s3 = ContratoSuscripcion::new(8890,TipoSuscripcion::Super, 100.0, 2, Fecha::new(12, 12, 2025), MediosDePago::Efectivo);
+		let mut s4 = ContratoSuscripcion::new(3190,TipoSuscripcion::Super, 100.0, 2, Fecha::new(29, 2, 2024), MediosDePago::Efectivo);
+
+		//Registro de suscipciones
+		assert!(sistema.registrar_contrato(s1));
+		assert!(sistema.registrar_contrato(s2));
+		assert!(sistema.registrar_contrato(s3));
+		assert!(sistema.registrar_contrato(s4));
+
+		assert!(sistema.estacion_con_mas_suscripciones().is_some_and(|e|e.es_verano()),"Debio retornar una estacion o la misma no coincide con lo que se esperaba");
+		//Operaciones minimas (Solo altera el resultado con cancelaciones)
+		assert!(sistema.cancelar_suscripcion(&user1));
+		assert!(sistema.estacion_con_mas_suscripciones().is_some_and(|e|e.es_verano()),"Debio retornar una estacion o la misma no coincide con lo que se esperaba");
 
 	}
 
 	//listado con activas
 	#[test]
 	fn con_reporte(){
+		let mut sistema = Plataforma::new();
+		
+		//Usuarios
+		let user1 = Usuario::new(&"Paulo", 4592);
+		let user2 = Usuario::new(&"Michael",1844);
+		let user3 = Usuario::new(&"Martin",8890);
+		let user4 = Usuario::new(&"Ricky",2100);
+
+		assert!(sistema.registrar_usuario(user1.clone()));
+		assert!(sistema.registrar_usuario(user2.clone()));
+		assert!(sistema.registrar_usuario(user3.clone()));
+		assert!(sistema.registrar_usuario(user4));
+
+		//Suscripciones
+		let mut s1 = ContratoSuscripcion::new(4592,TipoSuscripcion::Basic, 100.0, 2, Fecha::new(12, 5, 2026), MediosDePago::Efectivo);
+		let mut s2 = ContratoSuscripcion::new(1844,TipoSuscripcion::Super, 100.0, 2, Fecha::new(21, 5, 2026), MediosDePago::Efectivo);
+		let mut s3 = ContratoSuscripcion::new(8890,TipoSuscripcion::Clasic, 100.0, 2, Fecha::new(2, 1, 2026), MediosDePago::Efectivo);
+		let mut s4 = ContratoSuscripcion::new(2100,TipoSuscripcion::Super, 100.0, 2, Fecha::new(12, 5, 2026), MediosDePago::Efectivo);
+		
+		//Registro de suscipciones
+		assert!(sistema.registrar_contrato(s1));
+		assert!(sistema.registrar_contrato(s2));
+		assert!(sistema.registrar_contrato(s3));
+		assert!(sistema.registrar_contrato(s4));
+
+		//Reporte
+		assert!(sistema.estacion_con_mas_suscripciones().is_some_and(|e|e.es_otonio()),"Debio retornar una estacion o la misma no coincide con lo que se esperaba");
+	
+		//Operaciones minimas con las suscripciones
+		assert!(sistema.upgrade(&user1));
+		assert!(sistema.downgrade(&user3));
+		assert!(sistema.upgrade(&user3));
+		assert!(sistema.upgrade(&user3));
+		assert!(sistema.downgrade(&user3));
+
+		assert!(sistema.estacion_con_mas_suscripciones().is_some_and(|e|e.es_otonio()),"Debio retornar una estacion o la misma no coincide con lo que se esperaba");
 
 	}
 
-	//listado vacio
+	//listado de suscripciones vacio
 	#[test]
 	fn sin_reporte2(){
+		//Sistema recien inicializado
+		let mut sistema = Plataforma::new();
+		assert!(sistema.estacion_con_mas_suscripciones().is_none(),"Aqui no debio retornar algo");
+		//Con usuarios pero no debe existir influencia sino hubo registro de suscripciones de los mismos
+		let user1 = Usuario::new(&"Daniel", 4512);
+		let user2 = Usuario::new(&"Daniel",1244);
+		
+		assert!(sistema.registrar_usuario(user1));
+		assert!(sistema.registrar_usuario(user2));
+		assert_eq!(sistema.usuarios.len(),2);
 
+		assert!(sistema.estacion_con_mas_suscripciones().is_none(),"Aqui no debio retornar algo ya que no se hicieron operaciones todavia");
 	}
 
 }
