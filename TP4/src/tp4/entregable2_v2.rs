@@ -291,10 +291,10 @@ impl Fecha{
 //Estaciones
 #[derive(Eq, Hash, PartialEq,Clone)]
 enum TemporadaAnio{
+	Verano(u8),
 	Otonio(u8),
 	Invierno(u8),
-	Primavera(u8),
-	Verano(u8) 
+	Primavera(u8)
 }
 
 impl TemporadaAnio{
@@ -574,32 +574,33 @@ impl Plataforma{
 				
 			});
 			//Continuacion del codigo
-			//Contabilizo el total para cada temporada
-			let mut temporadas_cant : HashMap<TemporadaAnio,u64> = HashMap::new();
+			//Contabilizo el total para cada temporada en un arreglo fijo segun orden de definicion de las estacion
+			let mut temporadas_cant = [0 as u64; 4];
 			suscripciones_tempo.iter().for_each(|(_,estacion)|{
 				match estacion.temporada{
-					TemporadaAnio::Invierno(_) => {*temporadas_cant.entry(TemporadaAnio::Invierno(0)).or_insert(0) += estacion.cant_suscripciones;},
-					TemporadaAnio::Primavera(_) => {*temporadas_cant.entry(TemporadaAnio::Primavera(0)).or_insert(0) += estacion.cant_suscripciones;},
-					TemporadaAnio::Verano(_) => {*temporadas_cant.entry(TemporadaAnio::Verano(0)).or_insert(0) += estacion.cant_suscripciones;},
-					TemporadaAnio::Otonio(_) => {*temporadas_cant.entry(TemporadaAnio::Otonio(0)).or_insert(0) += estacion.cant_suscripciones;},
+					TemporadaAnio::Verano(_) => {temporadas_cant[0] += estacion.cant_suscripciones;},
+					TemporadaAnio::Otonio(_) => {temporadas_cant[1] += estacion.cant_suscripciones;},
+					TemporadaAnio::Invierno(_) => {temporadas_cant[2] += estacion.cant_suscripciones;},
+					TemporadaAnio::Primavera(_) => {temporadas_cant[3] += estacion.cant_suscripciones;},
 				}
 			});
-			//Filtro y proceso la estacion con mas suscripciones antes de retornarla al final
-			if let Some(temporada_max) =  temporadas_cant.iter().max_by_key(|t|t.1){
+			
+			//Filtro y proceso la estacion con mas suscripciones antes de retornarla al final			
+			if let Some(temporada_max) = temporadas_cant.iter().enumerate().max_by_key(|t|t.1){
 				if let Some(mut estacion_max) = suscripciones_tempo.into_iter().filter(|(_,estacion)|{
-					match &temporada_max.0 {
-						TemporadaAnio::Verano(_) => estacion.es_verano(),
-						TemporadaAnio::Otonio(_) => estacion.es_otonio(),
-						TemporadaAnio::Invierno(_) => estacion.es_invierno(),
-						TemporadaAnio::Primavera(_) => estacion.es_primavera(),
+					match temporada_max.0 {
+						0 => estacion.es_verano(),
+						1 => estacion.es_otonio(),
+						2 => estacion.es_invierno(),
+						3 => estacion.es_primavera(),
+						_ => false
 					}
 				}).max_by_key(|t|t.1.cant_suscripciones).map(|t|t.1){
 					estacion_max.cant_estacion = *temporada_max.1;
 					res = Some(estacion_max);
 				}
-				
 			}
-			
+
 		}
 
 		return res
@@ -626,7 +627,7 @@ mod test_entregable2{
 		assert!(sistema.registrar_usuario(user1.clone()));
 		assert!(sistema.registrar_usuario(user2.clone()));
 		assert!(sistema.registrar_usuario(user3.clone()));
-		assert!(sistema.registrar_usuario(user4));
+		assert!(sistema.registrar_usuario(user4.clone()));
 
 		//Suscripciones
 		let mut s1 = ContratoSuscripcion::new(4592,TipoSuscripcion::Basic, 100.0, 2, Fecha::new(12, 6, 2026), MediosDePago::Efectivo);
@@ -640,10 +641,18 @@ mod test_entregable2{
 		assert!(sistema.registrar_contrato(s3));
 		assert!(sistema.registrar_contrato(s4));
 
-		assert!(sistema.estacion_con_mas_suscripciones().is_some_and(|e|e.es_verano()),"Debio retornar una estacion o la misma no coincide con lo que se esperaba");
+		assert!(sistema.estacion_con_mas_suscripciones().is_some_and(|e|e.es_invierno()),"Debio retornar una estacion o la misma no coincide con lo que se esperaba");
+
 		//Operaciones minimas (Solo altera el resultado con cancelaciones)
 		assert!(sistema.cancelar_suscripcion(&user1));
 		assert!(sistema.estacion_con_mas_suscripciones().is_some_and(|e|e.es_verano()),"Debio retornar una estacion o la misma no coincide con lo que se esperaba");
+
+		assert!(sistema.cancelar_suscripcion(&user3));
+		assert!(sistema.cancelar_suscripcion(&user4));
+		assert!(sistema.estacion_con_mas_suscripciones().is_some_and(|e|e.es_invierno()),"Debio retornar una estacion o la misma no coincide con lo que se esperaba");
+
+		assert!(sistema.cancelar_suscripcion(&user2));
+		assert!(sistema.estacion_con_mas_suscripciones().is_none(),"Aqui no debio retornar algo");
 
 	}
 
@@ -704,6 +713,21 @@ mod test_entregable2{
 		assert_eq!(sistema.usuarios.len(),2);
 
 		assert!(sistema.estacion_con_mas_suscripciones().is_none(),"Aqui no debio retornar algo ya que no se hicieron operaciones todavia");
+	}
+
+	//Test extra para verificar ante suscripciones con fechas erroneas
+	#[test]
+	fn sin_reporte3(){
+		let mut sistema = Plataforma::new();
+		//Con un usuario y suscripcion con fecha invalida
+		let user1 = Usuario::new(&"Daniel", 6819);
+		let mut s1 = ContratoSuscripcion::new(6819,TipoSuscripcion::Basic, 100.0, 2, Fecha::new(31, 2, 2004), MediosDePago::Efectivo);
+
+		assert!(sistema.registrar_usuario(user1));
+		assert!(sistema.registrar_contrato(s1));
+
+		assert!(sistema.estacion_con_mas_suscripciones().is_none(),"Aqui no debio retornar algo ya que el listado de suscripciones estaria vacio");
+
 	}
 
 }
