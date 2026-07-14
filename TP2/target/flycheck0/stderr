@@ -1,1 +1,108 @@
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   1.083471735s  INFO prepare_target{force=false package_id=TP2 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Programas Rust\Practicas---Seminario-Rust-Recursada\TP2) target="TP2"}: cargo::core::compiler::fingerprint: fingerprint error for TP2 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Programas Rust\Practicas---Seminario-Rust-Recursada\TP2)/Check { test: false }/TargetInner { name: "TP2", doc: true, ..: with_path("C:\\Users\\ezeleo\\Documents\\Programas\\Programas Rust\\Practicas---Seminario-Rust-Recursada\\TP2\\src\\main.rs", Edition2024) }
+   1.180492607s  INFO prepare_target{force=false package_id=TP2 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Programas Rust\Practicas---Seminario-Rust-Recursada\TP2) target="TP2"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\ezeleo\Documents\Programas\Programas Rust\Practicas---Seminario-Rust-Recursada\TP2\target\debug\.fingerprint\TP2-ffb6f91408b5befc\bin-TP2`
+
+Caused by:
+    El sistema no puede encontrar el archivo especificado. (os error 2)
+
+Stack backtrace:
+   0: std::backtrace_rs::backtrace::win64::trace
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src\..\..\backtrace\src\backtrace/win64.rs:85:14
+   1: std::backtrace_rs::backtrace::trace_unsynchronized::<<std::backtrace::Backtrace>::create::{closure#0}>
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src\..\..\backtrace\src\backtrace/mod.rs:66:14
+   2: <std::backtrace::Backtrace>::create
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src/backtrace.rs:331:13
+   3: <std::backtrace::Backtrace>::capture
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src/backtrace.rs:296:9
+   4: <std::io::error::Error as anyhow::context::ext::StdError>::ext_context::<alloc::string::String>
+   5: cargo_util::paths::read
+   6: cargo::core::compiler::fingerprint::prepare_target
+   7: cargo::core::compiler::compile
+   8: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   9: cargo::ops::cargo_compile::compile_ws
+  10: cargo::ops::cargo_compile::compile_with_exec
+  11: cargo::ops::cargo_compile::compile
+  12: cargo::commands::check::exec
+  13: <cargo::cli::Exec>::exec
+  14: cargo::cli::main
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: <&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync as core::ops::function::FnOnce<()>>::call_once
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\core\src\ops/function.rs:287:21
+  19: std::panicking::catch_unwind::do_call::<&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync, i32>
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src/panicking.rs:581:40
+  20: std::panicking::catch_unwind::<i32, &dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync>
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src/panicking.rs:544:19
+  21: std::panic::catch_unwind::<&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync, i32>
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src/panic.rs:359:14
+  22: std::rt::lang_start_internal::{closure#0}
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src/rt.rs:175:24
+  23: std::panicking::catch_unwind::do_call::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src/panicking.rs:581:40
+  24: std::panicking::catch_unwind::<isize, std::rt::lang_start_internal::{closure#0}>
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src/panicking.rs:544:19
+  25: std::panic::catch_unwind::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src/panic.rs:359:14
+  26: std::rt::lang_start_internal
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src/rt.rs:171:5
+  27: main
+  28: __tmainCRTStartup
+  29: mainCRTStartup
+  30: <unknown>
+  31: <unknown>
+   2.308616992s  INFO prepare_target{force=false package_id=TP2 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Programas Rust\Practicas---Seminario-Rust-Recursada\TP2) target="TP2"}: cargo::core::compiler::fingerprint: fingerprint error for TP2 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Programas Rust\Practicas---Seminario-Rust-Recursada\TP2)/Check { test: true }/TargetInner { name: "TP2", doc: true, ..: with_path("C:\\Users\\ezeleo\\Documents\\Programas\\Programas Rust\\Practicas---Seminario-Rust-Recursada\\TP2\\src\\main.rs", Edition2024) }
+   2.308706889s  INFO prepare_target{force=false package_id=TP2 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Programas Rust\Practicas---Seminario-Rust-Recursada\TP2) target="TP2"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\ezeleo\Documents\Programas\Programas Rust\Practicas---Seminario-Rust-Recursada\TP2\target\debug\.fingerprint\TP2-3d172c585c47bf4d\test-bin-TP2`
+
+Caused by:
+    El sistema no puede encontrar el archivo especificado. (os error 2)
+
+Stack backtrace:
+   0: std::backtrace_rs::backtrace::win64::trace
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src\..\..\backtrace\src\backtrace/win64.rs:85:14
+   1: std::backtrace_rs::backtrace::trace_unsynchronized::<<std::backtrace::Backtrace>::create::{closure#0}>
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src\..\..\backtrace\src\backtrace/mod.rs:66:14
+   2: <std::backtrace::Backtrace>::create
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src/backtrace.rs:331:13
+   3: <std::backtrace::Backtrace>::capture
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src/backtrace.rs:296:9
+   4: <std::io::error::Error as anyhow::context::ext::StdError>::ext_context::<alloc::string::String>
+   5: cargo_util::paths::read
+   6: cargo::core::compiler::fingerprint::prepare_target
+   7: cargo::core::compiler::compile
+   8: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   9: cargo::ops::cargo_compile::compile_ws
+  10: cargo::ops::cargo_compile::compile_with_exec
+  11: cargo::ops::cargo_compile::compile
+  12: cargo::commands::check::exec
+  13: <cargo::cli::Exec>::exec
+  14: cargo::cli::main
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: <&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync as core::ops::function::FnOnce<()>>::call_once
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\core\src\ops/function.rs:287:21
+  19: std::panicking::catch_unwind::do_call::<&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync, i32>
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src/panicking.rs:581:40
+  20: std::panicking::catch_unwind::<i32, &dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync>
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src/panicking.rs:544:19
+  21: std::panic::catch_unwind::<&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync, i32>
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src/panic.rs:359:14
+  22: std::rt::lang_start_internal::{closure#0}
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src/rt.rs:175:24
+  23: std::panicking::catch_unwind::do_call::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src/panicking.rs:581:40
+  24: std::panicking::catch_unwind::<isize, std::rt::lang_start_internal::{closure#0}>
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src/panicking.rs:544:19
+  25: std::panic::catch_unwind::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src/panic.rs:359:14
+  26: std::rt::lang_start_internal
+             at /rustc/2d8144b7880597b6e6d3dfd63a9a9efae3f533d3/library\std\src/rt.rs:171:5
+  27: main
+  28: __tmainCRTStartup
+  29: mainCRTStartup
+  30: <unknown>
+  31: <unknown>
+    Checking TP2 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Programas Rust\Practicas---Seminario-Rust-Recursada\TP2)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 29.36s
