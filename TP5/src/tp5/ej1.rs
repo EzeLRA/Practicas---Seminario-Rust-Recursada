@@ -5,9 +5,7 @@ use std::{fs::File, io::{Error, Read, Write}};
 use std::io;
 
 /*
-*
-	Nueva implementacion - Ejercicio1
-*
+	Nueva implementacion  -  Ejercicio1
 */
 
 /*

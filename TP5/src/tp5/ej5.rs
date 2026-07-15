@@ -66,6 +66,8 @@ impl From<serde_json::Error> for Errores {
 /*
 	Extraccion Ejercicio 3 - TP4
 	Estructuras secundarias 
+
+	ACA DEBO INTEGRAR EL STRUCT FECHA DEL TP3 A TODOS LOS EJERCICIOS DEL TP4-5
 */
 
 use core::hash;
