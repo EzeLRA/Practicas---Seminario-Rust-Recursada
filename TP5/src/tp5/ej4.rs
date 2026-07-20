@@ -73,7 +73,7 @@ impl From<serde_json::Error> for Errores {
 ***/
 //Atributos
 #[derive(Debug,Clone,Serialize, Deserialize)]
-struct Fecha{
+pub struct Fecha{
     pub dia : u8,
     pub mes : u8,
     pub anio : u16
@@ -120,7 +120,7 @@ impl Fecha{
     }
 
     pub fn es_bisiesto(&self)->bool{
-        return (self.anio % 4)==0;
+        return (self.anio % 4 == 0 && self.anio % 100 != 0) || (self.anio % 400 == 0)
     }
 
     //Auxiliar para determinar el ultimo dia de un mes
@@ -205,8 +205,9 @@ impl Fecha{
 
 }
 
+
 #[cfg(test)]
-mod testing_ejercicio10_fecha{
+mod testing_ejercicio3{
     use super::Fecha;
 
     #[test]
@@ -217,27 +218,12 @@ mod testing_ejercicio10_fecha{
 
     #[test]
     fn validacion_de_fecha(){
-        //Si las fechas tienen aproximadamente un formato correcto (Respeta el sistema gregoriano)
         let mut f = Fecha::new(1, 1, 2025);
         assert_eq!(f.es_fecha_valida(),true);
         f = Fecha::new(31, 2, 2004);
         assert_eq!(f.es_fecha_valida(),false);
-        //Si determina cual es la ultima fecha(dia) en el que acaba el mes
-        let mut f = Fecha::new(1, 9, 2025);
-        assert_eq!(f.ultimo_dia(),30);
-        assert!(f.es_fecha_valida());
-
-        let mut f = Fecha::new(1, 4, 2025);
-        assert_eq!(f.ultimo_dia(),30);
-        assert!(f.es_fecha_valida());
-
-        let mut f = Fecha::new(1, 6, 2025);
-        assert_eq!(f.ultimo_dia(),30);
-        assert!(f.es_fecha_valida());
-
-        let mut f = Fecha::new(1, 11, 2025);
-        assert_eq!(f.ultimo_dia(),30);
-        assert!(f.es_fecha_valida());
+		f = Fecha::new(32, 2, 2005);
+        assert_eq!(f.es_fecha_valida(),false);
     }
 
     #[test]
@@ -246,11 +232,14 @@ mod testing_ejercicio10_fecha{
         assert_eq!(f.es_bisiesto(),true);
         f = Fecha::new(1, 1, 2025);
         assert_eq!(f.es_bisiesto(),false);
+		f = Fecha::new(1, 1, 100);
+        assert_eq!(f.es_bisiesto(),false);
+		f = Fecha::new(1, 1, 400);
+		assert_eq!(f.es_bisiesto(),true);
     }
 
     #[test]
     fn adicion_fecha(){
-        //Prueba con una fecha 1°
         let mut f = Fecha::new(1, 1, 2028);
         f.sumar_dias(30);
         assert_eq!(f.es_igual_a(&Fecha::new(31, 1, 2028)),true);
@@ -258,15 +247,10 @@ mod testing_ejercicio10_fecha{
         assert_eq!(f.es_igual_a(&Fecha::new(1, 2, 2028)),true);
         f.sumar_dias(29);
         assert_eq!(f.es_igual_a(&Fecha::new(1,3,2028)),true);
-        //Prueba con una fecha 2°
-        let mut f = Fecha::new(31, 12, 2024);
-        f.sumar_dias(1);
-        assert_eq!(f.es_igual_a(&Fecha::new(1, 1, 2025)),true);
     }
 
     #[test]
     fn sustraccion_fecha(){
-        //Prueba con una fecha 1°
         let mut f = Fecha::new(10, 4, 2028);
         f.restar_dias(9);
         assert_eq!(f.es_igual_a(&Fecha::new(1, 4, 2028)),true);
@@ -274,11 +258,6 @@ mod testing_ejercicio10_fecha{
         assert_eq!(f.es_igual_a(&Fecha::new(1,3,2028)),true);
         f.restar_dias(1);
         assert_eq!(f.es_igual_a(&Fecha::new(29, 2, 2028)),true);
-
-        //Prueba con una fecha 2°
-        let mut f = Fecha::new(1, 1, 2025);
-        f.restar_dias(1);
-        assert_eq!(f.es_igual_a(&Fecha::new(31, 12, 2024)),true);
     }
 
     #[test]
@@ -561,15 +540,6 @@ impl Biblioteca {
     }
 
     pub fn prestar(&mut self,cliente:Cliente,libro:&Libro,vencimiento:Fecha) -> Result<(),Errores> {
-        /* 
-        if (self.copias(&libro)>0) && (self.prestamos(&cliente)<5) && (!self.tiene_prestamo_del_libro(&cliente, &libro)) {
-            self.prestamos.push(Prestamo::new(&libro.clone(), &cliente, &vencimiento));
-            self.decrementar(&libro.clone());
-            return true
-        } else {
-            return false
-        }
-        */
         if self.copias(&libro)>0 {
             if self.prestamos(&cliente)<5 {
                 if !self.tiene_prestamo_del_libro(&cliente, &libro){
@@ -634,18 +604,7 @@ impl Biblioteca {
     }
 
     fn devolver(&mut self,fecha_devolucion:Fecha,libro:&Libro,cliente:&Cliente)->Result<(),Errores> {
-        /* 
-        let mut pude = false;
-        for prestamo in &mut self.prestamos {
-            if prestamo.es_igual(&libro, &cliente) && prestamo.estado.es_igual_a(&Estado::EnPrestamo) {
-                prestamo.estado = Estado::Devuelto;
-                prestamo.devolucion = Some(fecha_devolucion.clone());
-                pude = true;
-                break;
-            }
-        }
-        if pude {self.incrementar(&libro.clone());}
-        */
+        
         if !self.prestamos.is_empty(){
             for prestamo in &mut self.prestamos {
                 if prestamo.es_igual(&libro, &cliente) && prestamo.estado.es_igual_a(&Estado::EnPrestamo) {

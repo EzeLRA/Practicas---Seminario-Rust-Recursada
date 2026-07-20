@@ -339,17 +339,212 @@ impl Usuario{
     }
 }
 
+/* 
+    Extraccion TP3 - EJ3 - Fecha
+*/
+//Atributos
+#[derive(Debug,Clone,Serialize,Deserialize)]
+pub struct Fecha{
+    pub dia : u8,
+    pub mes : u8,
+    pub anio : u16
+}
+
+/*
+    Metodos
+*/
+
+impl Fecha{
+
+    //Metodos Secundarios
+    pub fn get_dia(&self)->u8{
+        return self.dia;
+    }
+    pub fn get_mes(&self)->u8{
+        return self.mes;
+    }
+    pub fn get_anio(&self)->u16{
+        return self.anio;
+    }
+    pub fn es_igual_a(&self,f:&Fecha)->bool{
+        return if(self.get_dia() == f.get_dia())&&(self.get_mes() == f.get_mes())&&(self.get_anio() == f.get_anio()){true}else{false}
+    }
+    /*
+        Metodos Primarios    
+     */
+    pub fn new(d:u8,m:u8,a:u16)->Fecha{
+        return Fecha { dia: d , mes: m , anio: a }
+    }
+    pub fn es_fecha_valida(&self)->bool{
+        
+        if (self.mes > 0) && (self.mes <= 12) && (self.anio > 0) && (self.dia > 0) {
+        
+            match self.mes{
+                2 => if self.es_bisiesto() { return self.dia <= 29 }else{ return self.dia <= 28},
+                9|4|6|11 => return self.dia <= 30,
+                _ => return self.dia <= 31
+            }
+            
+        }
+
+        return false;
+    }
+
+    pub fn es_bisiesto(&self)->bool{
+        return (self.anio % 4 == 0 && self.anio % 100 != 0) || (self.anio % 400 == 0)
+    }
+
+    //Auxiliar para determinar el ultimo dia de un mes
+    fn ultimo_dia(&self)->u8{
+        match self.mes{
+            2 => if self.es_bisiesto() {29}else{28},
+            9|4|6|11 => 30,
+            _ => 31
+        }
+    
+    }
+
+    //Auxiliar para avanzar de mes y anio
+    fn avanzar_mes(&mut self) {
+        if self.mes == 12 {
+            self.mes = 1;
+            self.anio += 1;
+        } else {
+            self.mes += 1;
+        }
+        self.dia = 1;
+    }
+
+    //Se considera que la fecha es valida
+    pub fn sumar_dias(&mut self,mut dias_sumar:u32){
+        //Bucle principal para el calculo
+        while dias_sumar > 0 {
+            //Obtiene el ultimo dia del mes (Cantidad total de dias que le corresponde)
+            let dias_mes = self.ultimo_dia();
+            //Calcula el resto de dias que debera actualizar en "dias_sumar" para avanzar en mes y anio hasta llegar al mes con la cantidad minima a sumar de dias correspondiente
+            let dias_restantes = dias_mes - self.dia + 1;
+            
+            //Avanza en los meses y anios(si fuera necesario) hasta llegar al mes y sumar la cantidad minima de dias
+            if dias_sumar >= dias_restantes as u32 {
+                dias_sumar -= dias_restantes as u32;
+                self.avanzar_mes();
+            } else {
+                //Suma la cantidad correspondiente al mes
+                self.dia += dias_sumar as u8;
+                //Fin de ejecucion
+                dias_sumar = 0;
+            }
+        }
+
+    }
+
+    //Auxiliar para retroceder de mes y anio
+    fn retroceder_mes(&mut self){
+        if self.mes == 1{
+            self.mes = 12;
+            self.anio -= 1;
+        } else {
+            self.mes -= 1;
+        }
+        self.dia = self.ultimo_dia();
+    }
+
+    //Se considera que la fecha es valida
+    //Y que no se llegara a una fecha negativa(anio negativo)
+    pub fn restar_dias(&mut self, mut dias_restar:u32){
+        //Bucle principal para el calculo
+        while dias_restar > 0 {
+            
+            //Retrocede en los meses y anios(si fuera necesario) hasta llegar al mes y restar la cantidad minima de dias
+            if dias_restar >= self.dia as u32 {
+                dias_restar -= self.dia as u32;
+                self.retroceder_mes();
+            } else {
+                //Resta la cantidad correspondiente al mes
+                self.dia -= dias_restar as u8;
+                //Fin de ejecucion
+                dias_restar = 0;
+            }
+        }
+    }
+
+    pub fn es_mayor(&self , f:&Fecha)->bool{
+        return if self.anio > f.anio {true}else 
+        if (self.anio == f.anio) && (self.mes > f.mes) {true}else 
+        if (self.mes == f.mes) && (self.dia > f.dia) {true}else{false};
+    }
+
+}
 
 
+#[cfg(test)]
+mod testing_ejercicio3{
+    use super::Fecha;
+
+    #[test]
+    fn creacion_fecha(){
+        let f = Fecha::new(1, 1, 2025);
+        assert_eq!(f.es_igual_a(&Fecha::new(1, 1, 2025)),true);
+    }
+
+    #[test]
+    fn validacion_de_fecha(){
+        let mut f = Fecha::new(1, 1, 2025);
+        assert_eq!(f.es_fecha_valida(),true);
+        f = Fecha::new(31, 2, 2004);
+        assert_eq!(f.es_fecha_valida(),false);
+		f = Fecha::new(32, 2, 2005);
+        assert_eq!(f.es_fecha_valida(),false);
+    }
+
+    #[test]
+    fn validar_bisiesto(){
+        let mut f = Fecha::new(1, 1, 2028);
+        assert_eq!(f.es_bisiesto(),true);
+        f = Fecha::new(1, 1, 2025);
+        assert_eq!(f.es_bisiesto(),false);
+		f = Fecha::new(1, 1, 100);
+        assert_eq!(f.es_bisiesto(),false);
+		f = Fecha::new(1, 1, 400);
+		assert_eq!(f.es_bisiesto(),true);
+    }
+
+    #[test]
+    fn adicion_fecha(){
+        let mut f = Fecha::new(1, 1, 2028);
+        f.sumar_dias(30);
+        assert_eq!(f.es_igual_a(&Fecha::new(31, 1, 2028)),true);
+        f.sumar_dias(1);
+        assert_eq!(f.es_igual_a(&Fecha::new(1, 2, 2028)),true);
+        f.sumar_dias(29);
+        assert_eq!(f.es_igual_a(&Fecha::new(1,3,2028)),true);
+    }
+
+    #[test]
+    fn sustraccion_fecha(){
+        let mut f = Fecha::new(10, 4, 2028);
+        f.restar_dias(9);
+        assert_eq!(f.es_igual_a(&Fecha::new(1, 4, 2028)),true);
+        f.restar_dias(31);
+        assert_eq!(f.es_igual_a(&Fecha::new(1,3,2028)),true);
+        f.restar_dias(1);
+        assert_eq!(f.es_igual_a(&Fecha::new(29, 2, 2028)),true);
+    }
+
+    #[test]
+    fn comparacion_fechas(){
+        let f1 = Fecha::new(25, 5, 2000);
+        let f2 = Fecha::new(25, 2, 2004);
+        assert_eq!(f1.es_mayor(&f2),false);
+        assert_eq!(f2.es_mayor(&f1),true);
+    }
+
+}
 /*
     Estructuras pertenciente al sistema
 */
 
-
-#[derive(PartialEq,Debug,Clone,Serialize,Deserialize)]
-struct Fecha(u8,u8,u64);
-
-#[derive(PartialEq,Debug,Clone,Serialize,Deserialize)]
+#[derive(Debug,Clone,Serialize,Deserialize)]
 struct Datos_Ingreso{
     datos_usuario : DatosPersona,
     fecha: Fecha,
@@ -360,8 +555,8 @@ impl Datos_Ingreso{
     fn new(datos : DatosPersona, f : Fecha , m : f64)->Datos_Ingreso{
         return Datos_Ingreso { datos_usuario: datos, fecha: f, monto: m };
     }
-    fn get_fecha(&self)->Fecha{
-        return self.fecha.clone();
+    fn get_fecha(&self)->&Fecha{
+        return &self.fecha;
     }
     fn get_monto(&self)->f64{
         return self.monto;
@@ -374,7 +569,7 @@ impl InformacionPersonal for Datos_Ingreso{
     }
 }
 
-#[derive(PartialEq,Debug,Clone,Serialize,Deserialize)]
+#[derive(Debug,Clone,Serialize,Deserialize)]
 struct Datos_Retiro{
     datos_genericos : Datos_Ingreso,
     medio_pago : MediosPago
@@ -391,7 +586,7 @@ impl Datos_Retiro{
 }
 
 //Tipos de transacciones implementados
-#[derive(PartialEq,Debug,Clone,Serialize,Deserialize)]
+#[derive(Debug,Clone,Serialize,Deserialize)]
 struct Datos_Operacion_Criptomoneda{
     datos_genericos : Datos_Ingreso,
     criptomoneda : Criptomoneda,
@@ -419,7 +614,7 @@ impl Datos_Operacion_Criptomoneda{
     }
 }
 
-#[derive(PartialEq,Debug,Clone,Serialize,Deserialize)]
+#[derive(Debug,Clone,Serialize,Deserialize)]
 struct Datos_Retiro_Blockchain{
     datos_criptomoneda : Datos_Operacion_Criptomoneda,
     blockchain : Blockchain,
@@ -442,7 +637,7 @@ impl Datos_Retiro_Blockchain{
     }
 }
 
-#[derive(PartialEq,Debug,Clone,Serialize,Deserialize)]
+#[derive(Debug,Clone,Serialize,Deserialize)]
 struct Datos_Extraccion_Blockchain{
     datos_criptomoneda : Datos_Operacion_Criptomoneda,
     blockchain : Blockchain
@@ -460,7 +655,7 @@ impl Datos_Extraccion_Blockchain{
     }
 }
 
-#[derive(PartialEq,Debug,Clone,Serialize,Deserialize)] 
+#[derive(Debug,Clone,Serialize,Deserialize)] 
 enum TiposTransacciones{
     IngresoFiat(Datos_Ingreso),
     CompraCriptomoneda(Datos_Operacion_Criptomoneda),
@@ -526,7 +721,7 @@ impl Criptomoneda_disponible{
 */
 
 
-#[derive(PartialEq,Debug,Clone)]
+#[derive(Debug,Clone)]
 struct Plataforma{
     usuarios : Vec<Usuario>,
     criptomonedas_dispone : Vec<Criptomoneda_disponible>, //Datos de la criptomoneda y cotiza
@@ -1086,16 +1281,16 @@ mod test_ejercicio5{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::Denegado(_)))
         }));
-        assert!(sis1.ingresar_monto_usuario(&us1,Fecha(13,03,2025),10000.0).is_ok());
-        assert!(sis1.ingresar_monto_usuario(&Usuario::new(&"Daniel".to_string(),&datos.apellido,&datos.email,datos.dni),Fecha(13,03,2025),100000.0).is_err_and(|e|{
+        assert!(sis1.ingresar_monto_usuario(&us1,Fecha::new(13,03,2025),10000.0).is_ok());
+        assert!(sis1.ingresar_monto_usuario(&Usuario::new(&"Daniel".to_string(),&datos.apellido,&datos.email,datos.dni),Fecha::new(13,03,2025),100000.0).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
         }) );
 
         assert!(sis1.retornar_fiat_usuario(&us1) == 10000.0);
         
-        assert!(sis1.retirar_monto_usuario(&us1,Fecha(13,03,2025),10000.0,MediosPago::TransferenciaBancaria).is_ok() );
-        assert!(sis1.retirar_monto_usuario(&Usuario::new(&"Daniel".to_string(),&datos.apellido,&datos.email,datos.dni),Fecha(13,03,2025),100000.0,MediosPago::TransferenciaBancaria).is_err_and(|e|{
+        assert!(sis1.retirar_monto_usuario(&us1,Fecha::new(13,03,2025),10000.0,MediosPago::TransferenciaBancaria).is_ok() );
+        assert!(sis1.retirar_monto_usuario(&Usuario::new(&"Daniel".to_string(),&datos.apellido,&datos.email,datos.dni),Fecha::new(13,03,2025),100000.0,MediosPago::TransferenciaBancaria).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
         }));
@@ -1107,74 +1302,74 @@ mod test_ejercicio5{
         assert!(sis1.registro_transacciones.len() == 2);
         
         //Operatoria de criptomonedas
-        assert!(sis1.ingresar_monto_usuario(&us1,Fecha(20,05,2025),10000.0).is_ok());
-        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha(23,05,2025),7500.0,c1.get_nombre()).is_ok() );
+        assert!(sis1.ingresar_monto_usuario(&us1,Fecha::new(20,05,2025),10000.0).is_ok());
+        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),7500.0,c1.get_nombre()).is_ok() );
 
         assert!(sis1.retornar_fiat_usuario(&us1) == 2500.0);
 
-        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha(23,05,2025),1500.0,c1.get_nombre()).is_ok() );
+        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),1500.0,c1.get_nombre()).is_ok() );
 
-        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha(23,05,2025),500.0,&"Cripton2".to_string()).is_err_and(|e|{
+        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),500.0,&"Cripton2".to_string()).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
         }) );
-        assert!(sis1.vender_criptomoneda_usuario(&us1,Fecha(23,05,2025),500.0,&"Cripton2".to_string()).is_err_and(|e|{
+        assert!(sis1.vender_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),500.0,&"Cripton2".to_string()).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
         }) );
-        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha(23,05,2025),2500.0,c3.get_nombre()).is_err_and(|e|{
+        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),2500.0,c3.get_nombre()).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::Denegado(_)))
         }));
 
-        assert!(sis1.ingresar_monto_usuario(&us1,Fecha(20,05,2025),10000.0).is_ok());
+        assert!(sis1.ingresar_monto_usuario(&us1,Fecha::new(20,05,2025),10000.0).is_ok());
 
         assert_eq!(sis1.retornar_fiat_usuario(&us1),11000.0);
         assert_eq!(sis1.registro_transacciones.len(),6);
 
-        assert!(sis1.vender_criptomoneda_usuario(&us1,Fecha(10,08,2025),2.0,c1.get_nombre()).is_ok() );
+        assert!(sis1.vender_criptomoneda_usuario(&us1,Fecha::new(10,08,2025),2.0,c1.get_nombre()).is_ok() );
         assert_eq!(sis1.retornar_fiat_usuario(&us1),14000.0);
         assert!(sis1.registro_transacciones.len() == 7);
 
-        assert!(sis1.retirar_monto_usuario(&us1,Fecha(10,08,26), 14000.1, MediosPago::TransferenciaBancaria).is_err_and(|e|{
+        assert!(sis1.retirar_monto_usuario(&us1,Fecha::new(10,08,2026), 14000.1, MediosPago::TransferenciaBancaria).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::Denegado(_)))
         }));
 
-        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha(23,05,2025),250000.0,c3.get_nombre()).is_err_and(|e|{
+        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),250000.0,c3.get_nombre()).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::Denegado(_)))
         }));
 
-        assert!(sis1.vender_criptomoneda_usuario(&us1,Fecha(23,05,2025),2500.0,c1.get_nombre()).is_err_and(|e|{
+        assert!(sis1.vender_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),2500.0,c1.get_nombre()).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::Denegado(_)))
         }));
 
         //Rechazar la operacion con criptos si no tiene permiso un usuario o si no existe el mismo
         let mut us3 = Usuario::new(&"Fulano",&"Queseyo",&"cualquiera@mail.com",1234);
-        assert!(sis1.comprar_criptomoneda_usuario(&us3,Fecha(23,05,2025),250000.0,c3.get_nombre()).is_err_and(|e|{
+        assert!(sis1.comprar_criptomoneda_usuario(&us3,Fecha::new(23,05,2025),250000.0,c3.get_nombre()).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
         }));
 
-        assert!(sis1.vender_criptomoneda_usuario(&us3,Fecha(23,05,2025),2500.0,c1.get_nombre()).is_err_and(|e|{
+        assert!(sis1.vender_criptomoneda_usuario(&us3,Fecha::new(23,05,2025),2500.0,c1.get_nombre()).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
         }));
         
         assert!(sis1.registrar_usuario(us3.clone()).is_ok());
 
-        assert!(sis1.retirar_monto_usuario(&us3,Fecha(10,08,26), 14000.1, MediosPago::TransferenciaBancaria).is_err_and(|e|{
+        assert!(sis1.retirar_monto_usuario(&us3,Fecha::new(10,08,2026), 14000.1, MediosPago::TransferenciaBancaria).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::SinVerificacion ))
         }));
 
-        assert!(sis1.comprar_criptomoneda_usuario(&us3,Fecha(23,05,2025),500.0,c1.get_nombre()).is_err_and(|e|{
+        assert!(sis1.comprar_criptomoneda_usuario(&us3,Fecha::new(23,05,2025),500.0,c1.get_nombre()).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::SinVerificacion))
         }) );
-        assert!(sis1.vender_criptomoneda_usuario(&us3,Fecha(23,05,2025),500.0,c1.get_nombre()).is_err_and(|e|{
+        assert!(sis1.vender_criptomoneda_usuario(&us3,Fecha::new(23,05,2025),500.0,c1.get_nombre()).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::SinVerificacion))
         }) );
@@ -1221,61 +1416,61 @@ mod test_ejercicio5{
 
         assert!(sis1.registrar_usuario(us1.clone()).is_ok());
 
-        assert!(sis1.ingresar_monto_usuario(&us1,Fecha(20,05,2025),100000.0).is_ok());
+        assert!(sis1.ingresar_monto_usuario(&us1,Fecha::new(20,05,2025),100000.0).is_ok());
 
         assert!(sis1.validar_usuario(&us1).is_ok());
 
-        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha(23,05,2025),12500.0,c1.get_nombre()).is_ok() );
-        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha(23,05,2025),5000.0,c2.get_nombre()).is_ok() );
-        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha(23,05,2025),25000.0,c3.get_nombre()).is_ok() );
+        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),12500.0,c1.get_nombre()).is_ok() );
+        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),5000.0,c2.get_nombre()).is_ok() );
+        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),25000.0,c3.get_nombre()).is_ok() );
 
         //Transacciones con blockchains
 
         //Con usuario inexistente
         let mut us3 = Usuario::new(&"Memo",&"Teso",&"teso@mail.com",4321);
-        assert!(sis1.criptomoneda_a_blockchain_usuario(&us3,Fecha(23,06,2025),2.0,c1.get_nombre(),&"Bloque1".to_string()).is_err_and(|e|{
+        assert!(sis1.criptomoneda_a_blockchain_usuario(&us3,Fecha::new(23,06,2025),2.0,c1.get_nombre(),&"Bloque1".to_string()).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
         }) );
-        assert!(sis1.blockchain_a_criptomoneda_usuario(&us3,Fecha(27,08,2025),4.0,c1.get_nombre(),b3.get_nombre()).is_err_and(|e|{
+        assert!(sis1.blockchain_a_criptomoneda_usuario(&us3,Fecha::new(27,08,2025),4.0,c1.get_nombre(),b3.get_nombre()).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
         }) );
         //Criptomoneda inexistente
-        assert!(sis1.criptomoneda_a_blockchain_usuario(&us1,Fecha(23,06,2025),2.0,&"CositoCoin".to_string() ,b3.get_nombre()).is_err_and(|e|{
+        assert!(sis1.criptomoneda_a_blockchain_usuario(&us1,Fecha::new(23,06,2025),2.0,&"CositoCoin".to_string() ,b3.get_nombre()).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
         }) );
-        assert!(sis1.blockchain_a_criptomoneda_usuario(&us1,Fecha(27,08,2025),4.0,&"CositoCoin".to_string(),b3.get_nombre()).is_err_and(|e|{
+        assert!(sis1.blockchain_a_criptomoneda_usuario(&us1,Fecha::new(27,08,2025),4.0,&"CositoCoin".to_string(),b3.get_nombre()).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
         }) );
         //Con usuario existente y no verificado
         assert!(sis1.registrar_usuario(us3.clone()).is_ok());
-        assert!(sis1.criptomoneda_a_blockchain_usuario(&us3,Fecha(23,06,2025),2.0,c1.get_nombre(),b3.get_nombre()).is_err_and(|e|{
+        assert!(sis1.criptomoneda_a_blockchain_usuario(&us3,Fecha::new(23,06,2025),2.0,c1.get_nombre(),b3.get_nombre()).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::SinVerificacion))
         }) );
 
         //Con usuario existente y verificado
-        assert!(sis1.criptomoneda_a_blockchain_usuario(&us1,Fecha(23,06,2025),2.0,c1.get_nombre(),b1.get_nombre()).is_ok() );
-        assert!(sis1.criptomoneda_a_blockchain_usuario(&us1,Fecha(23,06,2025),2.0,c1.get_nombre(),&"Bloque1".to_string()).is_err_and(|e|{
+        assert!(sis1.criptomoneda_a_blockchain_usuario(&us1,Fecha::new(23,06,2025),2.0,c1.get_nombre(),b1.get_nombre()).is_ok() );
+        assert!(sis1.criptomoneda_a_blockchain_usuario(&us1,Fecha::new(23,06,2025),2.0,c1.get_nombre(),&"Bloque1".to_string()).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::FalloTransaccion))
         }) );
-        assert!(sis1.criptomoneda_a_blockchain_usuario(&us1,Fecha(13,07,2025),2.0,c1.get_nombre(),b4.get_nombre()).is_ok());
-        assert!(sis1.criptomoneda_a_blockchain_usuario(&us1,Fecha(21,07,2025),2.0,c1.get_nombre(),b3.get_nombre()).is_err_and(|e|{
+        assert!(sis1.criptomoneda_a_blockchain_usuario(&us1,Fecha::new(13,07,2025),2.0,c1.get_nombre(),b4.get_nombre()).is_ok());
+        assert!(sis1.criptomoneda_a_blockchain_usuario(&us1,Fecha::new(21,07,2025),2.0,c1.get_nombre(),b3.get_nombre()).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::FalloTransaccion))
         }) );
         assert_eq!(sis1.registro_transacciones.len(),6);
 
-        assert!(sis1.blockchain_a_criptomoneda_usuario(&us1,Fecha(27,08,2025),4.0,c1.get_nombre(),b1.get_nombre()).is_ok() );
-        assert!(sis1.blockchain_a_criptomoneda_usuario(&us1,Fecha(27,08,2025),4.0,c1.get_nombre(),b3.get_nombre()).is_err_and(|e|{
+        assert!(sis1.blockchain_a_criptomoneda_usuario(&us1,Fecha::new(27,08,2025),4.0,c1.get_nombre(),b1.get_nombre()).is_ok() );
+        assert!(sis1.blockchain_a_criptomoneda_usuario(&us1,Fecha::new(27,08,2025),4.0,c1.get_nombre(),b3.get_nombre()).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::FalloTransaccion))
         }) );
-        assert!(sis1.blockchain_a_criptomoneda_usuario(&us1,Fecha(27,08,2025),4.0,c1.get_nombre(),&"Bloque1".to_string()).is_err_and(|e|{
+        assert!(sis1.blockchain_a_criptomoneda_usuario(&us1,Fecha::new(27,08,2025),4.0,c1.get_nombre(),&"Bloque1".to_string()).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::FalloTransaccion))
         }) );
@@ -1308,7 +1503,7 @@ mod test_ejercicio5{
         sis1.registrar_criptomoneda(c2.clone(),600.0);
         sis1.registrar_criptomoneda(c3.clone(),2000.0);
 
-        assert!(sis1.ingresar_monto_usuario(&us1,Fecha(20,05,2025),900000.0).is_ok());
+        assert!(sis1.ingresar_monto_usuario(&us1,Fecha::new(20,05,2025),900000.0).is_ok());
         assert!(sis1.validar_usuario(&us1).is_ok());
 
         assert!(sis1.criptomoneda_max_cant_compras().is_none());
@@ -1317,24 +1512,24 @@ mod test_ejercicio5{
         assert!(sis1.criptomoneda_max_monto_ventas().is_none());
 
         //Operaciones de compra y venta        
-        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha(23,05,2025),15000.0,c1.get_nombre()).is_ok() );
-        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha(23,05,2025),15000.0,c1.get_nombre()).is_ok());
-        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha(23,05,2025),15000.0,c1.get_nombre()).is_ok());
+        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),15000.0,c1.get_nombre()).is_ok() );
+        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),15000.0,c1.get_nombre()).is_ok());
+        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),15000.0,c1.get_nombre()).is_ok());
         
-        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha(23,05,2025),1200.0,c2.get_nombre()).is_ok());
+        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),1200.0,c2.get_nombre()).is_ok());
         
-        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha(23,05,2025),4000.0,c3.get_nombre()).is_ok());
-        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha(23,05,2025),4000.0,c3.get_nombre()).is_ok());
-        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha(23,05,2025),4000.0,c3.get_nombre()).is_ok());
-        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha(23,05,2025),4000.0,c3.get_nombre()).is_ok());
+        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),4000.0,c3.get_nombre()).is_ok());
+        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),4000.0,c3.get_nombre()).is_ok());
+        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),4000.0,c3.get_nombre()).is_ok());
+        assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),4000.0,c3.get_nombre()).is_ok());
 
         assert_eq!(sis1.registro_transacciones.len(),9);
         
-        assert!(sis1.vender_criptomoneda_usuario(&us1,Fecha(25,05,2025),10.0,c1.get_nombre()).is_ok());
-        assert!(sis1.vender_criptomoneda_usuario(&us1,Fecha(25,05,2025),10.0,c1.get_nombre()).is_ok());
-        assert!(sis1.vender_criptomoneda_usuario(&us1,Fecha(25,05,2025),10.0,c1.get_nombre()).is_ok());
+        assert!(sis1.vender_criptomoneda_usuario(&us1,Fecha::new(25,05,2025),10.0,c1.get_nombre()).is_ok());
+        assert!(sis1.vender_criptomoneda_usuario(&us1,Fecha::new(25,05,2025),10.0,c1.get_nombre()).is_ok());
+        assert!(sis1.vender_criptomoneda_usuario(&us1,Fecha::new(25,05,2025),10.0,c1.get_nombre()).is_ok());
 
-        assert!(sis1.vender_criptomoneda_usuario(&us1,Fecha(25,05,2025),2.0,c3.get_nombre()).is_ok());
+        assert!(sis1.vender_criptomoneda_usuario(&us1,Fecha::new(25,05,2025),2.0,c3.get_nombre()).is_ok());
 
         assert_eq!(sis1.registro_transacciones.len(),13);
 
@@ -1355,18 +1550,18 @@ mod test_ejercicio5{
     #[test]
     fn prueba_comprobantes(){
         let d = DatosPersona { nombre: "asd".to_string(), apellido: "fd".to_string(), email: "asdf".to_string(), dni: 123 };
-        let c1 = Datos_Ingreso::new(d.clone(), Fecha(12, 4, 26), 100.0);
-        assert_eq!(c1.get_fecha(),Fecha(12, 4, 26));
+        let c1 = Datos_Ingreso::new(d.clone(), Fecha::new(12, 4, 26), 100.0);
+        assert!(c1.get_fecha().es_igual_a(&Fecha::new(12, 4, 26)));
         assert!(c1.get_monto()>0.0);
-        let c2 = Datos_Retiro::new(d.clone(), Fecha(12,4,26), 100.0, MediosPago::MercadoPago);
+        let c2 = Datos_Retiro::new(d.clone(), Fecha::new(12,4,26), 100.0, MediosPago::MercadoPago);
         assert!(matches!(c2.get_medio_pago(),MediosPago::MercadoPago));
-        let c3 = Datos_Operacion_Criptomoneda::new(d.clone(), Fecha(1,1,26), 100.0, Criptomoneda::new("asd", "a"), 100.0);
+        let c3 = Datos_Operacion_Criptomoneda::new(d.clone(), Fecha::new(1,1,26), 100.0, Criptomoneda::new("asd", "a"), 100.0);
         assert!(c3.get_cotizacion()>0.0);
         assert_eq!(*c3.get_cripto_nom(),"asd".to_string());
         assert_eq!(*c3.get_criptomoneda().get_nombre(),"asd".to_string());
-        let c4 = Datos_Extraccion_Blockchain::new(d.clone(), Fecha(1,1,26), 10.0, Criptomoneda::new("asd", "a"), 1.0, Blockchain { nombre: "a".to_string(), prefijo: "f".to_string() });
+        let c4 = Datos_Extraccion_Blockchain::new(d.clone(), Fecha::new(1,1,26), 10.0, Criptomoneda::new("asd", "a"), 1.0, Blockchain { nombre: "a".to_string(), prefijo: "f".to_string() });
         assert_eq!(*c4.get_blockchain().get_nombre(),"a".to_string());
-        let c5 = Datos_Retiro_Blockchain::new(d, Fecha(1,1,26), 1.0, Criptomoneda::new("asd", "a"), 2.0, Blockchain { nombre: "a".to_string(), prefijo: "f".to_string() });
+        let c5 = Datos_Retiro_Blockchain::new(d, Fecha::new(1,1,26), 1.0, Criptomoneda::new("asd", "a"), 2.0, Blockchain { nombre: "a".to_string(), prefijo: "f".to_string() });
         assert_eq!(*c5.get_blockchain().get_nombre(),"a".to_string());
         assert!(!c5.get_hash().is_empty());
     }   
@@ -1400,7 +1595,7 @@ mod test_ejercicio5{
         let mut us1 = Usuario::new(&datos.nombre,&datos.apellido,&datos.email,datos.dni);
 
         assert!(sis1.registrar_usuario(us1.clone()).is_ok() );
-		assert!(sis1.ingresar_monto_usuario(&us1,Fecha(31, 2, 2026) , 1000.0).is_err_and(|e|{
+		assert!(sis1.ingresar_monto_usuario(&us1,Fecha::new(31, 2, 2026) , 1000.0).is_err_and(|e|{
                 assert!(!e.to_string().is_empty());
 			    matches!(e, Errores::ErrorIO(_))
         }),"Ocurrio un error imprevisto");

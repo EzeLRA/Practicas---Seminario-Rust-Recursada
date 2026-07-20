@@ -1,7 +1,3 @@
-/* 
-    Estructura Fecha
-*/
-
 //Atributos
 #[derive(Debug,Clone)]
 pub struct Fecha{
@@ -51,7 +47,7 @@ impl Fecha{
     }
 
     pub fn es_bisiesto(&self)->bool{
-        return (self.anio % 4)==0;
+        return (self.anio % 4 == 0 && self.anio % 100 != 0) || (self.anio % 400 == 0)
     }
 
     //Auxiliar para determinar el ultimo dia de un mes
@@ -153,6 +149,8 @@ mod testing_ejercicio3{
         assert_eq!(f.es_fecha_valida(),true);
         f = Fecha::new(31, 2, 2004);
         assert_eq!(f.es_fecha_valida(),false);
+		f = Fecha::new(32, 2, 2005);
+        assert_eq!(f.es_fecha_valida(),false);
     }
 
     #[test]
@@ -161,6 +159,10 @@ mod testing_ejercicio3{
         assert_eq!(f.es_bisiesto(),true);
         f = Fecha::new(1, 1, 2025);
         assert_eq!(f.es_bisiesto(),false);
+		f = Fecha::new(1, 1, 100);
+        assert_eq!(f.es_bisiesto(),false);
+		f = Fecha::new(1, 1, 400);
+		assert_eq!(f.es_bisiesto(),true);
     }
 
     #[test]

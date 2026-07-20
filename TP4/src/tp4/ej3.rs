@@ -46,10 +46,212 @@ enum MediosDePago{
 }
 
 /*
+	Extraccion Ej3 - TP3 - Fecha
+*/
+//Atributos
+#[derive(Debug,Clone)]
+pub struct Fecha{
+    pub dia : u8,
+    pub mes : u8,
+    pub anio : u16
+}
+
+/*
+    Metodos
+*/
+
+impl Fecha{
+
+    //Metodos Secundarios
+    pub fn get_dia(&self)->u8{
+        return self.dia;
+    }
+    pub fn get_mes(&self)->u8{
+        return self.mes;
+    }
+    pub fn get_anio(&self)->u16{
+        return self.anio;
+    }
+    pub fn es_igual_a(&self,f:&Fecha)->bool{
+        return if(self.get_dia() == f.get_dia())&&(self.get_mes() == f.get_mes())&&(self.get_anio() == f.get_anio()){true}else{false}
+    }
+    /*
+        Metodos Primarios    
+     */
+    pub fn new(d:u8,m:u8,a:u16)->Fecha{
+        return Fecha { dia: d , mes: m , anio: a }
+    }
+    pub fn es_fecha_valida(&self)->bool{
+        
+        if (self.mes > 0) && (self.mes <= 12) && (self.anio > 0) && (self.dia > 0) {
+        
+            match self.mes{
+                2 => if self.es_bisiesto() { return self.dia <= 29 }else{ return self.dia <= 28},
+                9|4|6|11 => return self.dia <= 30,
+                _ => return self.dia <= 31
+            }
+            
+        }
+
+        return false;
+    }
+
+    pub fn es_bisiesto(&self)->bool{
+        return (self.anio % 4 == 0 && self.anio % 100 != 0) || (self.anio % 400 == 0)
+    }
+
+    //Auxiliar para determinar el ultimo dia de un mes
+    fn ultimo_dia(&self)->u8{
+        match self.mes{
+            2 => if self.es_bisiesto() {29}else{28},
+            9|4|6|11 => 30,
+            _ => 31
+        }
+    
+    }
+
+    //Auxiliar para avanzar de mes y anio
+    fn avanzar_mes(&mut self) {
+        if self.mes == 12 {
+            self.mes = 1;
+            self.anio += 1;
+        } else {
+            self.mes += 1;
+        }
+        self.dia = 1;
+    }
+
+    //Se considera que la fecha es valida
+    pub fn sumar_dias(&mut self,mut dias_sumar:u32){
+        //Bucle principal para el calculo
+        while dias_sumar > 0 {
+            //Obtiene el ultimo dia del mes (Cantidad total de dias que le corresponde)
+            let dias_mes = self.ultimo_dia();
+            //Calcula el resto de dias que debera actualizar en "dias_sumar" para avanzar en mes y anio hasta llegar al mes con la cantidad minima a sumar de dias correspondiente
+            let dias_restantes = dias_mes - self.dia + 1;
+            
+            //Avanza en los meses y anios(si fuera necesario) hasta llegar al mes y sumar la cantidad minima de dias
+            if dias_sumar >= dias_restantes as u32 {
+                dias_sumar -= dias_restantes as u32;
+                self.avanzar_mes();
+            } else {
+                //Suma la cantidad correspondiente al mes
+                self.dia += dias_sumar as u8;
+                //Fin de ejecucion
+                dias_sumar = 0;
+            }
+        }
+
+    }
+
+    //Auxiliar para retroceder de mes y anio
+    fn retroceder_mes(&mut self){
+        if self.mes == 1{
+            self.mes = 12;
+            self.anio -= 1;
+        } else {
+            self.mes -= 1;
+        }
+        self.dia = self.ultimo_dia();
+    }
+
+    //Se considera que la fecha es valida
+    //Y que no se llegara a una fecha negativa(anio negativo)
+    pub fn restar_dias(&mut self, mut dias_restar:u32){
+        //Bucle principal para el calculo
+        while dias_restar > 0 {
+            
+            //Retrocede en los meses y anios(si fuera necesario) hasta llegar al mes y restar la cantidad minima de dias
+            if dias_restar >= self.dia as u32 {
+                dias_restar -= self.dia as u32;
+                self.retroceder_mes();
+            } else {
+                //Resta la cantidad correspondiente al mes
+                self.dia -= dias_restar as u8;
+                //Fin de ejecucion
+                dias_restar = 0;
+            }
+        }
+    }
+
+    pub fn es_mayor(&self , f:&Fecha)->bool{
+        return if self.anio > f.anio {true}else 
+        if (self.anio == f.anio) && (self.mes > f.mes) {true}else 
+        if (self.mes == f.mes) && (self.dia > f.dia) {true}else{false};
+    }
+
+}
+
+
+#[cfg(test)]
+mod testing_ejercicio3{
+    use super::Fecha;
+
+    #[test]
+    fn creacion_fecha(){
+        let f = Fecha::new(1, 1, 2025);
+        assert_eq!(f.es_igual_a(&Fecha::new(1, 1, 2025)),true);
+    }
+
+    #[test]
+    fn validacion_de_fecha(){
+        let mut f = Fecha::new(1, 1, 2025);
+        assert_eq!(f.es_fecha_valida(),true);
+        f = Fecha::new(31, 2, 2004);
+        assert_eq!(f.es_fecha_valida(),false);
+		f = Fecha::new(32, 2, 2005);
+        assert_eq!(f.es_fecha_valida(),false);
+    }
+
+    #[test]
+    fn validar_bisiesto(){
+        let mut f = Fecha::new(1, 1, 2028);
+        assert_eq!(f.es_bisiesto(),true);
+        f = Fecha::new(1, 1, 2025);
+        assert_eq!(f.es_bisiesto(),false);
+		f = Fecha::new(1, 1, 100);
+        assert_eq!(f.es_bisiesto(),false);
+		f = Fecha::new(1, 1, 400);
+		assert_eq!(f.es_bisiesto(),true);
+    }
+
+    #[test]
+    fn adicion_fecha(){
+        let mut f = Fecha::new(1, 1, 2028);
+        f.sumar_dias(30);
+        assert_eq!(f.es_igual_a(&Fecha::new(31, 1, 2028)),true);
+        f.sumar_dias(1);
+        assert_eq!(f.es_igual_a(&Fecha::new(1, 2, 2028)),true);
+        f.sumar_dias(29);
+        assert_eq!(f.es_igual_a(&Fecha::new(1,3,2028)),true);
+    }
+
+    #[test]
+    fn sustraccion_fecha(){
+        let mut f = Fecha::new(10, 4, 2028);
+        f.restar_dias(9);
+        assert_eq!(f.es_igual_a(&Fecha::new(1, 4, 2028)),true);
+        f.restar_dias(31);
+        assert_eq!(f.es_igual_a(&Fecha::new(1,3,2028)),true);
+        f.restar_dias(1);
+        assert_eq!(f.es_igual_a(&Fecha::new(29, 2, 2028)),true);
+    }
+
+    #[test]
+    fn comparacion_fechas(){
+        let f1 = Fecha::new(25, 5, 2000);
+        let f2 = Fecha::new(25, 2, 2004);
+        assert_eq!(f1.es_mayor(&f2),false);
+        assert_eq!(f2.es_mayor(&f1),true);
+    }
+
+}
+
+/*
 	Estructuras primarias : Usuario y suscripcion
 */
 
-#[derive(PartialEq,Debug,Clone)]
+#[derive(Debug,Clone)]
 struct ContratoSuscripcion{
 	//Referencia al usuario
 	dni_usuario : u64,
@@ -58,7 +260,7 @@ struct ContratoSuscripcion{
 	activo : bool,
 	costo_mensual : f64,
 	duracion_mes : u8,
-	fecha_inicio : u64,
+	fecha_inicio : Fecha,
 	tipo_pago : MediosDePago
 }
 
@@ -87,7 +289,7 @@ impl Usuario{
 }
 
 impl ContratoSuscripcion{
-	pub fn new(dni:u64,tipo:TipoSuscripcion,costo:f64,cant:u8,fecha:u64,medio:MediosDePago)->ContratoSuscripcion{
+	pub fn new(dni:u64,tipo:TipoSuscripcion,costo:f64,cant:u8,fecha:Fecha,medio:MediosDePago)->ContratoSuscripcion{
 		return ContratoSuscripcion { 
 			dni_usuario: dni,
 			tipo_suscripcion: tipo, 
@@ -284,8 +486,8 @@ mod test_ejercicio3{
 
 	#[test]
 	fn cambio_suscripcion(){
-		let mut s1 = ContratoSuscripcion::new(1234,TipoSuscripcion::Basic, 100.0, 2, 120526, MediosDePago::Efectivo);
-		let mut s2 = ContratoSuscripcion::new(1234,TipoSuscripcion::Super, 100.0, 2, 120526, MediosDePago::Efectivo);
+		let mut s1 = ContratoSuscripcion::new(1234,TipoSuscripcion::Basic, 100.0, 2, Fecha::new(12,05,2026), MediosDePago::Efectivo);
+		let mut s2 = ContratoSuscripcion::new(1234,TipoSuscripcion::Super, 100.0, 2, Fecha::new(12,05,2026), MediosDePago::Efectivo);
 		
 		//Cambio nulo
 		assert!(!s1.downgrade_tipo());
@@ -316,15 +518,15 @@ mod test_ejercicio3{
 		assert!(!sistema.registrar_usuario(user2));
 		assert_eq!(sistema.usuarios.len(),2);
 
-		let mut s1 = ContratoSuscripcion::new(1234, TipoSuscripcion::Basic, 1000.0, 5, 200125, MediosDePago::Efectivo);
-		let mut s2 = ContratoSuscripcion::new(12345, TipoSuscripcion::Super, 5000.0, 5, 200125, MediosDePago::Efectivo);
-		let mut s3 = ContratoSuscripcion::new(2345, TipoSuscripcion::Super, 5000.0, 5, 200125, MediosDePago::Efectivo);
+		let mut s1 = ContratoSuscripcion::new(1234, TipoSuscripcion::Basic, 1000.0, 5, Fecha::new(20,01,2025), MediosDePago::Efectivo);
+		let mut s2 = ContratoSuscripcion::new(12345, TipoSuscripcion::Super, 5000.0, 5, Fecha::new(20,01,2025), MediosDePago::Efectivo);
+		let mut s3 = ContratoSuscripcion::new(2345, TipoSuscripcion::Super, 5000.0, 5, Fecha::new(20,01,2025), MediosDePago::Efectivo);
 
 		assert!(sistema.registrar_contrato(s1.clone()));
 		assert!(sistema.registrar_contrato(s2));
 		assert!(!sistema.registrar_contrato(s3));
 		assert!(!sistema.registrar_contrato(s1));
-		let mut s2 = ContratoSuscripcion::new(12345, TipoSuscripcion::Clasic, 5000.0, 5, 200125, MediosDePago::Efectivo);
+		let mut s2 = ContratoSuscripcion::new(12345, TipoSuscripcion::Clasic, 5000.0, 5, Fecha::new(20,01,2025), MediosDePago::Efectivo);
 		assert!(!sistema.registrar_contrato(s2));
 		assert_eq!(sistema.listado_suscripciones(true).len(),2);
 	}
@@ -338,8 +540,8 @@ mod test_ejercicio3{
 		sistema.registrar_usuario(user1.clone());
 		sistema.registrar_usuario(user2.clone());
 
-		let mut s1 = ContratoSuscripcion::new(1234, TipoSuscripcion::Basic, 1000.0, 5, 200125, MediosDePago::Efectivo);
-		let mut s2 = ContratoSuscripcion::new(12345, TipoSuscripcion::Super, 5000.0, 5, 200125, MediosDePago::Efectivo);
+		let mut s1 = ContratoSuscripcion::new(1234, TipoSuscripcion::Basic, 1000.0, 5, Fecha::new(20,01,2025), MediosDePago::Efectivo);
+		let mut s2 = ContratoSuscripcion::new(12345, TipoSuscripcion::Super, 5000.0, 5, Fecha::new(20,01,2025), MediosDePago::Efectivo);
 	
 		sistema.registrar_contrato(s1);
 		sistema.registrar_contrato(s2);
@@ -353,7 +555,7 @@ mod test_ejercicio3{
 		assert!(sistema.downgrade(&user1));
 		assert!(sistema.downgrade(&user1));
 
-		s1 = ContratoSuscripcion::new(1234, TipoSuscripcion::Clasic, 2500.0, 5, 200125, MediosDePago::Efectivo);
+		s1 = ContratoSuscripcion::new(1234, TipoSuscripcion::Clasic, 2500.0, 5, Fecha::new(20,01,2025), MediosDePago::Efectivo);
 		sistema.registrar_contrato(s1);
 		assert!(sistema.cancelar_suscripcion(&user1));
 
@@ -374,10 +576,10 @@ mod test_ejercicio3{
 		sistema.registrar_usuario(user3);
 		sistema.registrar_usuario(user4);
 
-		let s1 = ContratoSuscripcion::new(12345, TipoSuscripcion::Basic, 1000.0, 5, 200125, MediosDePago::Efectivo);
-		let s2 = ContratoSuscripcion::new(1234, TipoSuscripcion::Basic, 1000.0, 5, 200125, MediosDePago::MercadoPago(InfoMercadoPago { alias: "zapato".to_string(), cuil: 123456 }));
-		let s3 = ContratoSuscripcion::new(4554, TipoSuscripcion::Basic, 1000.0, 5, 200125, MediosDePago::Criptomoneda(InfoCripto { wallet_address : "asd2354tg42t".to_string(), red: "%#1234".to_string() }));
-		let s4 = ContratoSuscripcion::new(3487, TipoSuscripcion::Basic, 1000.0, 5, 200125, MediosDePago::Efectivo);
+		let s1 = ContratoSuscripcion::new(12345, TipoSuscripcion::Basic, 1000.0, 5, Fecha::new(20,01,2025), MediosDePago::Efectivo);
+		let s2 = ContratoSuscripcion::new(1234, TipoSuscripcion::Basic, 1000.0, 5, Fecha::new(20,01,2025), MediosDePago::MercadoPago(InfoMercadoPago { alias: "zapato".to_string(), cuil: 123456 }));
+		let s3 = ContratoSuscripcion::new(4554, TipoSuscripcion::Basic, 1000.0, 5, Fecha::new(20,01,2025), MediosDePago::Criptomoneda(InfoCripto { wallet_address : "asd2354tg42t".to_string(), red: "%#1234".to_string() }));
+		let s4 = ContratoSuscripcion::new(3487, TipoSuscripcion::Basic, 1000.0, 5, Fecha::new(20,01,2025), MediosDePago::Efectivo);
 
 		sistema.registrar_contrato(s1);
 		sistema.registrar_contrato(s2);
