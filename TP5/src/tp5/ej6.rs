@@ -64,7 +64,7 @@ impl From<serde_json::Error> for Errores {
     }
 }
 
-/* 
+/*
     Extraccion Ejercicio 5 - TP4
 */
 
@@ -121,7 +121,7 @@ impl Criptomoneda{
     }
     fn agregar_blockchain(&mut self,b:Blockchain)->bool{
         let mut pude = false;
-        
+
         if !self.blockchains.iter().any(|blockchain| blockchain.es_igual_a(b.get_nombre())) {
             self.blockchains.push(b);
             pude = true;
@@ -131,7 +131,7 @@ impl Criptomoneda{
     }
     fn eliminar_blockchain(&mut self,b:&Blockchain)->bool{
         let mut pude = false;
-        
+
         if let Some(pos) = self.blockchains.iter().position(|blockchain| blockchain.es_igual_a(b.get_nombre())){
             self.blockchains.remove(pos);
             pude = true;
@@ -209,7 +209,7 @@ impl BalancePropio{
     }
     fn contabilizar_criptomoneda(&mut self,nom:&String,monto:f64)->bool{
         let mut pude = false;
-        
+
         if let Some(dato) = self.criptomonedas.iter_mut().find(|cripto| cripto.es_igual_a(nom)){
             dato.contabilizar(monto);
             pude = true;
@@ -219,7 +219,7 @@ impl BalancePropio{
     }
     fn descontabilizar_criptomoneda(&mut self,nom:&String,monto:f64)->bool{
         let mut pude = false;
-        
+
         if let Some(pos) = self.criptomonedas.iter().position(|cripto| cripto.es_igual_a(nom)){
             pude = self.criptomonedas[pos].descontabilizar(monto);
             if (pude)&&(!(self.criptomonedas[pos].get_monto() > 0.0)) {
@@ -270,14 +270,14 @@ impl InformacionPersonal for Usuario{
 
 impl Usuario{
     fn new(nom:&str,ape:&str,mail:&str,dni_in:u64)->Usuario{
-        return Usuario { 
-            datos: DatosPersona { 
-                nombre: nom.to_string(), 
-                apellido: ape.to_string(), 
-                email: mail.to_string(), 
+        return Usuario {
+            datos: DatosPersona {
+                nombre: nom.to_string(),
+                apellido: ape.to_string(),
+                email: mail.to_string(),
                 dni: dni_in
-            } , 
-            validado: false, 
+            } ,
+            validado: false,
             balance: BalancePropio::new()}
     }
     fn is_verificado(&self)->bool{
@@ -302,7 +302,7 @@ impl Usuario{
     //Criptomoneda(Los montos se basan en lo que le proporcione el sistema)
     fn comprar_criptomoneda(&mut self,nom:&String,monto_fiat_compra:f64,monto_a_comprar:f64)->bool{
         let mut pude = false;
-        
+
         pude = self.retirar_monto_fiat(monto_fiat_compra);
         if pude {
             if !self.balance.contabilizar_criptomoneda(nom,monto_a_comprar){
@@ -314,8 +314,8 @@ impl Usuario{
     }
     fn vender_criptomoneda(&mut self,nom:&String,criptos_a_vender:f64,ganancia_venta:f64)->bool{
         let mut pude = false;
-        
-        pude = self.balance.descontabilizar_criptomoneda(nom,criptos_a_vender);            
+
+        pude = self.balance.descontabilizar_criptomoneda(nom,criptos_a_vender);
         if pude {
             self.balance.contabilizar_fiat(ganancia_venta);
         }
@@ -339,7 +339,7 @@ impl Usuario{
     }
 }
 
-/* 
+/*
     Extraccion TP3 - EJ3 - Fecha
 */
 //Atributos
@@ -370,21 +370,21 @@ impl Fecha{
         return if(self.get_dia() == f.get_dia())&&(self.get_mes() == f.get_mes())&&(self.get_anio() == f.get_anio()){true}else{false}
     }
     /*
-        Metodos Primarios    
+        Metodos Primarios
      */
     pub fn new(d:u8,m:u8,a:u16)->Fecha{
         return Fecha { dia: d , mes: m , anio: a }
     }
     pub fn es_fecha_valida(&self)->bool{
-        
+
         if (self.mes > 0) && (self.mes <= 12) && (self.anio > 0) && (self.dia > 0) {
-        
+
             match self.mes{
                 2 => if self.es_bisiesto() { return self.dia <= 29 }else{ return self.dia <= 28},
                 9|4|6|11 => return self.dia <= 30,
                 _ => return self.dia <= 31
             }
-            
+
         }
 
         return false;
@@ -401,7 +401,7 @@ impl Fecha{
             9|4|6|11 => 30,
             _ => 31
         }
-    
+
     }
 
     //Auxiliar para avanzar de mes y anio
@@ -423,7 +423,7 @@ impl Fecha{
             let dias_mes = self.ultimo_dia();
             //Calcula el resto de dias que debera actualizar en "dias_sumar" para avanzar en mes y anio hasta llegar al mes con la cantidad minima a sumar de dias correspondiente
             let dias_restantes = dias_mes - self.dia + 1;
-            
+
             //Avanza en los meses y anios(si fuera necesario) hasta llegar al mes y sumar la cantidad minima de dias
             if dias_sumar >= dias_restantes as u32 {
                 dias_sumar -= dias_restantes as u32;
@@ -454,7 +454,7 @@ impl Fecha{
     pub fn restar_dias(&mut self, mut dias_restar:u32){
         //Bucle principal para el calculo
         while dias_restar > 0 {
-            
+
             //Retrocede en los meses y anios(si fuera necesario) hasta llegar al mes y restar la cantidad minima de dias
             if dias_restar >= self.dia as u32 {
                 dias_restar -= self.dia as u32;
@@ -469,8 +469,8 @@ impl Fecha{
     }
 
     pub fn es_mayor(&self , f:&Fecha)->bool{
-        return if self.anio > f.anio {true}else 
-        if (self.anio == f.anio) && (self.mes > f.mes) {true}else 
+        return if self.anio > f.anio {true}else
+        if (self.anio == f.anio) && (self.mes > f.mes) {true}else
         if (self.mes == f.mes) && (self.dia > f.dia) {true}else{false};
     }
 
@@ -595,7 +595,7 @@ struct Datos_Operacion_Criptomoneda{
 
 impl Datos_Operacion_Criptomoneda{
     fn new(user:DatosPersona,f:Fecha,m:f64,c:Criptomoneda,cotiz:f64)->Datos_Operacion_Criptomoneda{
-        return Datos_Operacion_Criptomoneda { 
+        return Datos_Operacion_Criptomoneda {
             datos_genericos: Datos_Ingreso::new(user, f, m ),
             criptomoneda: c,
             cotizacion: cotiz };
@@ -623,7 +623,7 @@ struct Datos_Retiro_Blockchain{
 
 impl Datos_Retiro_Blockchain{
     fn new(user:DatosPersona,f:Fecha,m:f64,c:Criptomoneda,cotiz:f64,b:Blockchain)->Datos_Retiro_Blockchain{
-        return Datos_Retiro_Blockchain { 
+        return Datos_Retiro_Blockchain {
             datos_criptomoneda: Datos_Operacion_Criptomoneda::new(user, f, m, c, cotiz),
             hash: b.generar_hash(10),
             blockchain: b
@@ -645,7 +645,7 @@ struct Datos_Extraccion_Blockchain{
 
 impl Datos_Extraccion_Blockchain{
     fn new(user:DatosPersona,f:Fecha,m:f64,c:Criptomoneda,cotiz:f64,b:Blockchain)->Datos_Extraccion_Blockchain{
-        return Datos_Extraccion_Blockchain { 
+        return Datos_Extraccion_Blockchain {
             datos_criptomoneda: Datos_Operacion_Criptomoneda::new(user, f, m, c, cotiz),
             blockchain: b
         }
@@ -655,7 +655,7 @@ impl Datos_Extraccion_Blockchain{
     }
 }
 
-#[derive(Debug,Clone,Serialize,Deserialize)] 
+#[derive(Debug,Clone,Serialize,Deserialize)]
 enum TiposTransacciones{
     IngresoFiat(Datos_Ingreso),
     CompraCriptomoneda(Datos_Operacion_Criptomoneda),
@@ -679,7 +679,7 @@ impl TiposTransacciones{
         res = match self{
             TiposTransacciones::CompraCriptomoneda(datos) => Some(datos.get_cripto_nom()),
             TiposTransacciones::VentaCriptomoneda(datos) => Some(datos.get_cripto_nom()),
-            _ => None, 
+            _ => None,
         };
 
         return res;
@@ -711,7 +711,7 @@ impl Criptomoneda_disponible{
     fn get_cotiza(&self)->f64{
         return self.1;
     }
-    
+
 }
 
 
@@ -777,21 +777,21 @@ impl Plataforma{
     }
     fn eliminar_criptomoneda(&mut self,cripto:&Criptomoneda)->bool{
         let mut pude = false;
-        
+
         if let Some(pos) = self.criptomonedas_dispone.iter().position(|c| c.0.get_nombre() == cripto.get_nombre()){
             pude = true;
             self.criptomonedas_dispone.remove(pos);
-        }       
+        }
 
         return pude;
     }
     fn registrar_criptomoneda(&mut self,cripto:Criptomoneda,cotiza:f64)->bool{
         let mut pude = false;
-        
+
         if self.criptomonedas_dispone.iter().find(|&c| c.0.get_nombre() == cripto.get_nombre() ).is_none(){
             self.criptomonedas_dispone.push(Criptomoneda_disponible(cripto,cotiza));
             pude = true;
-        }        
+        }
 
         return pude;
     }
@@ -808,26 +808,26 @@ impl Plataforma{
         return Ok(())
     }
     fn registrar_usuario(&mut self,u1:Usuario)->Result<(),Errores>{
-        
+
         if !self.usuarios.iter().any(|user| user.informacion_correcta(&u1.datos)){
             self.usuarios.push(u1);
             self.guardar_balances_info()?;
             return Ok(())
-        }        
+        }
 
         return Err(Errores::ErrorOperatoria(error_operatoria::Denegado("Wallet ya creada".to_string())));
     }
     fn retornar_fiat_usuario(&mut self,u1:&Usuario)->f64{
         let mut res = 0.0;
-        
+
         if let Some(u) = self.usuarios.iter().find(|user| user.informacion_correcta(&u1.datos)){
             res = u.get_balance_fiat();
-        }        
+        }
 
         return res;
     }
     fn validar_usuario(&mut self,u1:&Usuario)->Result<(),Errores>{
-        
+
         if let Some(u) = self.usuarios.iter_mut().find(|user| user.informacion_correcta(&u1.datos)){
             if !u.is_verificado(){
                 u.cambiar_verificacion();
@@ -835,7 +835,7 @@ impl Plataforma{
                 return Ok(())
             }
             return Err(Errores::ErrorOperatoria(error_operatoria::Denegado("Wallet ya validada".to_string())));
-        }       
+        }
         return Err(Errores::ErrorOperatoria(error_operatoria::Inexistente("Wallets".to_string())))
     }
     //Funciones primarias
@@ -853,7 +853,7 @@ impl Plataforma{
     //Se ingresa la cantidad que se quiera invertir en cripto
     fn comprar_criptomoneda_usuario(&mut self,u1:&Usuario,f:Fecha,monto_fiat:f64,nom:&String)->Result<(),Errores>{
         if let Some(u) = self.usuarios.iter_mut().find(|user| user.informacion_correcta(&u1.datos)){
-            
+
             if let Some(cr) = self.criptomonedas_dispone.iter().find(|&c| &c.0.get_nombre() == &nom){
                 //Compra
                 if u.is_verificado(){
@@ -866,7 +866,7 @@ impl Plataforma{
                         self.guardar_balances_info()?;
                         return Ok(())
                     }
-                    
+
                     return Err(Errores::ErrorOperatoria(error_operatoria::Denegado("Saldo insuficiente".to_string())))
                 }
                 return Err(Errores::ErrorOperatoria(error_operatoria::SinVerificacion))
@@ -877,9 +877,9 @@ impl Plataforma{
     }
     //Se ingresa la cantidad de cripto que se desea
     fn vender_criptomoneda_usuario(&mut self,u1:&Usuario,f:Fecha,criptos_vender:f64,nom:&String)->Result<(),Errores>{
-        
+
         if let Some(u) = self.usuarios.iter_mut().find(|user| user.informacion_correcta(&u1.datos)){
-            
+
             if let Some(cr) = self.criptomonedas_dispone.iter().find(|&c| &c.0.get_nombre() == &nom){
                 //Venta
                 if u.is_verificado(){
@@ -901,7 +901,7 @@ impl Plataforma{
         return Err(Errores::ErrorOperatoria(error_operatoria::Inexistente("Wallets".to_string())));
     }
     fn criptomoneda_a_blockchain_usuario(&mut self,u1:&Usuario,f:Fecha,montoTransaccion:f64,nomCripto:&String,nomBlockchain:&String)->Result<(),Errores>{
-        
+
         if let Some(u) = self.usuarios.iter_mut().find(|user| user.informacion_correcta(&u1.datos)){
             if let Some(cr) = self.criptomonedas_dispone.iter().find(|&c| &c.0.get_nombre() == &nomCripto){
                 //Buscar blockchain en la criptomoneda
@@ -925,7 +925,7 @@ impl Plataforma{
     }
     fn blockchain_a_criptomoneda_usuario(&mut self,u1:&Usuario,f:Fecha,montoTransaccion:f64,nomCripto:&String,nomBlockchain:&String)->Result<(),Errores>{
         let mut pude = false;
-        
+
         if let Some(u) = self.usuarios.iter_mut().find(|user| user.informacion_correcta(&u1.datos)){
             if let Some(cr) = self.criptomonedas_dispone.iter().find(|&c| &c.0.get_nombre() == &nomCripto){
                 //Hacer transaccion y generar comprobante
@@ -973,10 +973,10 @@ impl Plataforma{
             .for_each(|comprobante|{
                 if let Some(nombre) = comprobante.obtener_nombre_criptomoneda() {
                     *contador.entry(nombre.clone()).or_insert(0) += 1;
-            
+
                 }
             });
-            
+
             res = contador.into_iter().max_by_key(|&(_,cant)| cant).map(|(nom,_)|nom);
         }
 
@@ -994,10 +994,10 @@ impl Plataforma{
             .for_each(|comprobante|{
                 if let Some(nombre) = comprobante.obtener_nombre_criptomoneda() {
                     *contador.entry(nombre.clone()).or_insert(0) += 1;
-            
+
                 }
             });
-            
+
             res = contador.into_iter().max_by_key(|&(_,cant)| cant).map(|(nom,_)|nom);
 
         }
@@ -1017,10 +1017,10 @@ impl Plataforma{
                 if let Some(nombre) = comprobante.obtener_nombre_criptomoneda() {
                     if let Some(monto) = comprobante.obtener_volumen_criptomoneda(){
                         *contador.entry(nombre.clone()).or_insert(0.0) += monto;
-                    }        
+                    }
                 }
             });
-            
+
             res = contador.into_iter().fold(None, |max_actual: Option<(String, f64)>, (nom, monto)| {
                 match max_actual {
                     Some((max_nom, max_monto)) => {
@@ -1050,10 +1050,10 @@ impl Plataforma{
                 if let Some(nombre) = comprobante.obtener_nombre_criptomoneda() {
                     if let Some(monto) = comprobante.obtener_volumen_criptomoneda(){
                         *contador.entry(nombre.clone()).or_insert(0.0) += monto;
-                    }        
+                    }
                 }
             });
-            
+
             res = contador.into_iter().fold(None, |max_actual: Option<(String, f64)>, (nom, monto)| {
                 match max_actual {
                     Some((max_nom, max_monto)) => {
@@ -1065,7 +1065,7 @@ impl Plataforma{
                     }
                     None => Some((nom, monto)),
                 }
-            }).map(|(nom, _)| nom);        
+            }).map(|(nom, _)| nom);
         }
 
         return res;
@@ -1084,7 +1084,7 @@ impl Plataforma{
 */
 
 #[cfg(test)]
-mod test_ejercicio5{    
+mod test_ejercicio5{
     use super::*;
 
     #[test]
@@ -1126,7 +1126,7 @@ mod test_ejercicio5{
         assert!(c.get_blockchain(&nom).is_some());
         let nom = "Block31".to_string();
         assert!(c.get_blockchain(&nom).is_none());
-        
+
         //Desvinculacion y busqueda de blockchain
         let nom = "Block81".to_string();
         assert!(c.eliminar_blockchain(&b1));
@@ -1134,7 +1134,7 @@ mod test_ejercicio5{
         assert!(!c.blockchain_encontrado(&nom));
         assert!(c.get_blockchain(&nom).is_none());
 
-        //Desvinculacion total 
+        //Desvinculacion total
         assert!(c.eliminar_blockchain(&b2));
         assert!(c.eliminar_blockchain(&b3));
         assert!(c.blockchains.is_empty());
@@ -1170,7 +1170,7 @@ mod test_ejercicio5{
         //Retiro de monto
         assert!(!us1.retirar_monto_fiat(20000.0));
         assert!(us1.retirar_monto_fiat(10000.0));
-        assert_eq!(us1.get_balance_fiat(),0.0);  
+        assert_eq!(us1.get_balance_fiat(),0.0);
 
 
 
@@ -1189,7 +1189,7 @@ mod test_ejercicio5{
         assert!(us1.comprar_criptomoneda(c2.get_nombre(),5000.0,40.0));
         assert!(!us1.comprar_criptomoneda(c3.get_nombre(),25000.0,10.0));
         assert!(us1.comprar_criptomoneda(c3.get_nombre(),10000.0,10.0));
-        assert_eq!(us1.get_balance_fiat(),0.0); 
+        assert_eq!(us1.get_balance_fiat(),0.0);
 
         //Simulacion de venta de criptomonedas
         assert!(us1.vender_criptomoneda(c3.get_nombre(),5.0,20000.0));
@@ -1288,19 +1288,19 @@ mod test_ejercicio5{
         }) );
 
         assert!(sis1.retornar_fiat_usuario(&us1) == 10000.0);
-        
+
         assert!(sis1.retirar_monto_usuario(&us1,Fecha::new(13,03,2025),10000.0,MediosPago::TransferenciaBancaria).is_ok() );
         assert!(sis1.retirar_monto_usuario(&Usuario::new(&"Daniel".to_string(),&datos.apellido,&datos.email,datos.dni),Fecha::new(13,03,2025),100000.0,MediosPago::TransferenciaBancaria).is_err_and(|e|{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
         }));
-        
+
         assert!(sis1.retornar_fiat_usuario(&us1) == 0.0);
 
         //Resultado de comprobantes(El sistema dispone de comprobantes)
         assert!(!sis1.registro_transacciones.is_empty());
         assert!(sis1.registro_transacciones.len() == 2);
-        
+
         //Operatoria de criptomonedas
         assert!(sis1.ingresar_monto_usuario(&us1,Fecha::new(20,05,2025),10000.0).is_ok());
         assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),7500.0,c1.get_nombre()).is_ok() );
@@ -1357,7 +1357,7 @@ mod test_ejercicio5{
             assert!(!e.to_string().is_empty());
             matches!(e,Errores::ErrorOperatoria(error_operatoria::Inexistente(_)))
         }));
-        
+
         assert!(sis1.registrar_usuario(us3.clone()).is_ok());
 
         assert!(sis1.retirar_monto_usuario(&us3,Fecha::new(10,08,2026), 14000.1, MediosPago::TransferenciaBancaria).is_err_and(|e|{
@@ -1376,10 +1376,10 @@ mod test_ejercicio5{
 
         //Limpieza de archivos para prevencion de exceso de los mismos
         assert!(std::fs::remove_file("./lista_balances.json").is_ok(),"Error fuera de lo previsto");
-        assert!(std::fs::remove_file("./lista_transacciones.json").is_ok(),"Error fuera de lo previsto");  
+        assert!(std::fs::remove_file("./lista_transacciones.json").is_ok(),"Error fuera de lo previsto");
 
     }
-     
+
     #[test]
     fn operatoria_blockchains_sistema(){
         //Usuario
@@ -1478,11 +1478,11 @@ mod test_ejercicio5{
 
         //Limpieza de archivos para prevencion de exceso de los mismos
         assert!(std::fs::remove_file("./lista_balances2.json").is_ok(),"Error fuera de lo previsto");
-        assert!(std::fs::remove_file("./lista_transacciones2.json").is_ok(),"Error fuera de lo previsto");  
+        assert!(std::fs::remove_file("./lista_transacciones2.json").is_ok(),"Error fuera de lo previsto");
 
     }
 
-    
+
     #[test]
     fn operatoria_estadistica_sistema(){
         //Usuario
@@ -1511,20 +1511,20 @@ mod test_ejercicio5{
         assert!(sis1.criptomoneda_max_monto_compras().is_none());
         assert!(sis1.criptomoneda_max_monto_ventas().is_none());
 
-        //Operaciones de compra y venta        
+        //Operaciones de compra y venta
         assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),15000.0,c1.get_nombre()).is_ok() );
         assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),15000.0,c1.get_nombre()).is_ok());
         assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),15000.0,c1.get_nombre()).is_ok());
-        
+
         assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),1200.0,c2.get_nombre()).is_ok());
-        
+
         assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),4000.0,c3.get_nombre()).is_ok());
         assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),4000.0,c3.get_nombre()).is_ok());
         assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),4000.0,c3.get_nombre()).is_ok());
         assert!(sis1.comprar_criptomoneda_usuario(&us1,Fecha::new(23,05,2025),4000.0,c3.get_nombre()).is_ok());
 
         assert_eq!(sis1.registro_transacciones.len(),9);
-        
+
         assert!(sis1.vender_criptomoneda_usuario(&us1,Fecha::new(25,05,2025),10.0,c1.get_nombre()).is_ok());
         assert!(sis1.vender_criptomoneda_usuario(&us1,Fecha::new(25,05,2025),10.0,c1.get_nombre()).is_ok());
         assert!(sis1.vender_criptomoneda_usuario(&us1,Fecha::new(25,05,2025),10.0,c1.get_nombre()).is_ok());
@@ -1538,15 +1538,15 @@ mod test_ejercicio5{
         assert!(sis1.criptomoneda_max_monto_compras().is_some_and(|res| res == *c1.get_nombre()),"Aqui no tuvo que fallar");
 
         assert!(sis1.criptomoneda_max_cant_ventas().is_some_and(|res| res == *c1.get_nombre()),"Aqui no tuvo que fallar");
-        
+
         assert!(sis1.criptomoneda_max_monto_ventas().is_some_and(|res| res == *c1.get_nombre()),"Aqui no tuvo que fallar");
-        
+
         //Limpieza de archivos para prevencion de exceso de los mismos
         assert!(std::fs::remove_file("./lista_balances3.json").is_ok(),"Error fuera de lo previsto");
-        assert!(std::fs::remove_file("./lista_transacciones3.json").is_ok(),"Error fuera de lo previsto");  
+        assert!(std::fs::remove_file("./lista_transacciones3.json").is_ok(),"Error fuera de lo previsto");
 
     }
-    
+
     #[test]
     fn prueba_comprobantes(){
         let d = DatosPersona { nombre: "asd".to_string(), apellido: "fd".to_string(), email: "asdf".to_string(), dni: 123 };
@@ -1564,7 +1564,7 @@ mod test_ejercicio5{
         let c5 = Datos_Retiro_Blockchain::new(d, Fecha::new(1,1,26), 1.0, Criptomoneda::new("asd", "a"), 2.0, Blockchain { nombre: "a".to_string(), prefijo: "f".to_string() });
         assert_eq!(*c5.get_blockchain().get_nombre(),"a".to_string());
         assert!(!c5.get_hash().is_empty());
-    }   
+    }
 
     /*
 		Casos especiales para la cobertura de coverage
@@ -1606,7 +1606,7 @@ mod test_ejercicio5{
 	#[test]
 	fn caso_especial_error_serde() {
 		let path_err = "./corrupto.json";
-		
+
 		// Se fuerza la escritura en el contenido temporal que NO cumple con el formato estructurado de un .JSON válido
 		assert!(std::fs::write(path_err, "{ &&5435#$#$&42365_XXXX1234 : [::: ").is_ok(),"No debio fallar aqui");
 
@@ -1623,6 +1623,6 @@ mod test_ejercicio5{
 		}),"Aquí debió fallar");
 
 		assert!(std::fs::remove_file(path_err).is_ok(),"Error fuera de lo previsto");
-		
+
 	}
 }
