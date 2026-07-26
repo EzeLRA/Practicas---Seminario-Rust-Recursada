@@ -14,18 +14,18 @@ use std::{
     Tipos de errores
 */
 #[derive(Debug)]
-enum error_operatoria {
+enum ErroresOperatoria {
     Inexistente(String),
     EstructuraVacia(String),
 }
 
-impl Display for error_operatoria {
+impl Display for ErroresOperatoria {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            error_operatoria::Inexistente(val) => {
+            ErroresOperatoria::Inexistente(val) => {
                 write!(f, "No se encontro el elemento en la estructura {} ", val)
             }
-            error_operatoria::EstructuraVacia(val) => {
+            ErroresOperatoria::EstructuraVacia(val) => {
                 write!(f, "La estrucutra {} no dispone de elementos ", val)
             }
         }
@@ -34,7 +34,7 @@ impl Display for error_operatoria {
 
 #[derive(Debug)]
 enum Errores {
-    ErrorOperatoria(error_operatoria),
+    ErrorOperatoria(ErroresOperatoria),
     ErrorIO(io::Error),
     ErrorSerde(serde_json::Error),
 }
@@ -555,13 +555,13 @@ impl Veterinaria {
                     return Ok(());
                 }
             }
-            return Err(Errores::ErrorOperatoria(error_operatoria::Inexistente(
+            return Err(Errores::ErrorOperatoria(ErroresOperatoria::Inexistente(
                 self.get_nombre().clone(),
             )));
         }
-        return Err(Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(
-            self.get_nombre().clone(),
-        )));
+        return Err(Errores::ErrorOperatoria(
+            ErroresOperatoria::EstructuraVacia(self.get_nombre().clone()),
+        ));
     }
     pub fn modificar_fecha(&mut self, ate: &Atencion, fecha: Option<Fecha>) -> Result<(), Errores> {
         if !self.atenciones_realizadas.is_empty() {
@@ -572,13 +572,13 @@ impl Veterinaria {
                     return Ok(());
                 }
             }
-            return Err(Errores::ErrorOperatoria(error_operatoria::Inexistente(
+            return Err(Errores::ErrorOperatoria(ErroresOperatoria::Inexistente(
                 self.get_nombre().clone(),
             )));
         }
-        return Err(Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(
-            self.get_nombre().clone(),
-        )));
+        return Err(Errores::ErrorOperatoria(
+            ErroresOperatoria::EstructuraVacia(self.get_nombre().clone()),
+        ));
     }
     pub fn eliminar_atencion(&mut self, ate: &Atencion) -> Result<(), Errores> {
         if !self.atenciones_realizadas.is_empty() {
@@ -589,13 +589,13 @@ impl Veterinaria {
                     return Ok(());
                 }
             }
-            return Err(Errores::ErrorOperatoria(error_operatoria::Inexistente(
+            return Err(Errores::ErrorOperatoria(ErroresOperatoria::Inexistente(
                 self.get_nombre().clone(),
             )));
         }
-        return Err(Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(
-            self.get_nombre().clone(),
-        )));
+        return Err(Errores::ErrorOperatoria(
+            ErroresOperatoria::EstructuraVacia(self.get_nombre().clone()),
+        ));
     }
 }
 #[cfg(test)]
@@ -659,7 +659,7 @@ mod testing_ejercicio9 {
                     assert!(!e.to_string().is_empty());
                     matches!(
                         e,
-                        Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(_))
+                        Errores::ErrorOperatoria(ErroresOperatoria::EstructuraVacia(_))
                     )
                 })
         );
@@ -667,14 +667,14 @@ mod testing_ejercicio9 {
             assert!(!e.to_string().is_empty());
             matches!(
                 e,
-                Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(_))
+                Errores::ErrorOperatoria(ErroresOperatoria::EstructuraVacia(_))
             )
         }));
         assert!(v.eliminar_atencion(&ate_aux).is_err_and(|e| {
             assert!(!e.to_string().is_empty());
             matches!(
                 e,
-                Errores::ErrorOperatoria(error_operatoria::EstructuraVacia(_))
+                Errores::ErrorOperatoria(ErroresOperatoria::EstructuraVacia(_))
             )
         }));
 
@@ -711,7 +711,7 @@ mod testing_ejercicio9 {
                             assert!(!e.to_string().is_empty());
                             matches!(
                                 e,
-                                Errores::ErrorOperatoria(error_operatoria::Inexistente(_))
+                                Errores::ErrorOperatoria(ErroresOperatoria::Inexistente(_))
                             )
                         })
                 );
@@ -719,14 +719,14 @@ mod testing_ejercicio9 {
                     assert!(!e.to_string().is_empty());
                     matches!(
                         e,
-                        Errores::ErrorOperatoria(error_operatoria::Inexistente(_))
+                        Errores::ErrorOperatoria(ErroresOperatoria::Inexistente(_))
                     )
                 }));
                 assert!(v.eliminar_atencion(&a).is_err_and(|e| {
                     assert!(!e.to_string().is_empty());
                     matches!(
                         e,
-                        Errores::ErrorOperatoria(error_operatoria::Inexistente(_))
+                        Errores::ErrorOperatoria(ErroresOperatoria::Inexistente(_))
                     )
                 }));
 
