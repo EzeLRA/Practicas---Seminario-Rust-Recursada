@@ -1,0 +1,58 @@
+   4.409058200s  INFO prepare_target{force=false package_id=TP5 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5) target="TP5"}: cargo::core::compiler::fingerprint: fingerprint error for TP5 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5)/Check { test: false }/TargetInner { name: "TP5", doc: true, ..: with_path("C:\\Users\\ezeleo\\Documents\\Programas\\Practicas---Seminario-Rust-Recursada\\TP5\\src\\main.rs", Edition2024) }
+   4.409509900s  INFO prepare_target{force=false package_id=TP5 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5) target="TP5"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5\target\debug\.fingerprint\TP5-7b4df391b8b5da38\bin-TP5`
+
+Caused by:
+    El sistema no puede encontrar el archivo especificado. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_libgit2_prerelease
+  12: <unknown>
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: git_midx_writer_dump
+  17: git_filter_source_repo
+  18: git_midx_writer_dump
+  19: BaseThreadInitThunk
+  20: RtlUserThreadStart
+   5.882743500s  INFO prepare_target{force=false package_id=TP5 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5) target="TP5"}: cargo::core::compiler::fingerprint: fingerprint error for TP5 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5)/Check { test: true }/TargetInner { name: "TP5", doc: true, ..: with_path("C:\\Users\\ezeleo\\Documents\\Programas\\Practicas---Seminario-Rust-Recursada\\TP5\\src\\main.rs", Edition2024) }
+   5.902022100s  INFO prepare_target{force=false package_id=TP5 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5) target="TP5"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5\target\debug\.fingerprint\TP5-e0477ad4d5403a3d\test-bin-TP5`
+
+Caused by:
+    El sistema no puede encontrar el archivo especificado. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_libgit2_prerelease
+  12: <unknown>
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: git_midx_writer_dump
+  17: git_filter_source_repo
+  18: git_midx_writer_dump
+  19: BaseThreadInitThunk
+  20: RtlUserThreadStart
+    Checking TP5 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 37.50s

@@ -75,19 +75,13 @@ impl From<serde_json::Error> for Errores {
     Extraccion Ejercicio 5 - TP4
 */
 
+use rand::RngExt; //se usa rand 0.10
 use std::collections::HashMap;
-
-//Se debe importar (rand = "0.8") en cargo.toml
-use rand::distributions::Alphanumeric;
-use rand::{Rng, thread_rng};
 
 //Funcion auxiliar para generar un "hash simulado"
 pub fn aleatorio(tam: usize) -> String {
-    let rng = thread_rng();
-    rng.sample_iter(&Alphanumeric)
-        .take(tam)
-        .map(char::from)
-        .collect()
+    let mut rng = rand::rng();
+    (0..tam).map(|_| rng.random_range(0..=9).to_string()).collect()
 }
 
 /*
@@ -110,6 +104,7 @@ impl Blockchain {
     fn es_igual_a(&self, nom: &String) -> bool {
         return &self.nombre == nom;
     }
+    //Formato : "nom + numeros aleatorios" segun lo solicitado en el TP
     fn generar_hash(&self, tam: usize) -> String {
         return format!("{}{}", self.get_nombre(), aleatorio(tam));
     }
@@ -328,7 +323,10 @@ impl Usuario {
         self.balance.contabilizar_fiat(monto);
     }
     fn retirar_monto_fiat(&mut self, monto: f64) -> bool {
-        return self.balance.descontabilizar_fiat(monto);
+        if self.get_balance_fiat() > 0.0 {
+            return self.balance.descontabilizar_fiat(monto);
+        }
+        return false;
     }
     fn dispone_criptomonedas(&self) -> bool {
         return self.balance.tiene_criptomonedas();
@@ -363,11 +361,13 @@ impl Usuario {
     ) -> bool {
         let mut pude = false;
 
-        pude = self
-            .balance
-            .descontabilizar_criptomoneda(nom, criptos_a_vender);
-        if pude {
-            self.balance.contabilizar_fiat(ganancia_venta);
+        if self.dispone_criptomonedas() {
+            pude = self
+                .balance
+                .descontabilizar_criptomoneda(nom, criptos_a_vender);
+            if pude {
+                self.balance.contabilizar_fiat(ganancia_venta);
+            }
         }
 
         return pude;
@@ -381,7 +381,7 @@ impl Usuario {
         cripto: &Criptomoneda,
     ) -> bool {
         let mut pude = false;
-        if cripto.blockchain_encontrado(nomBlockchain) {
+        if cripto.blockchain_encontrado(nomBlockchain) && self.dispone_criptomonedas() {
             pude = self.balance.descontabilizar_criptomoneda(nomCripto, monto);
         }
         return pude;
@@ -986,9 +986,8 @@ impl Plataforma {
         {
             u.ingresar_monto_fiat(m);
             let datos = DatosIngreso::new(u.datos.clone(), f, m);
-            self.registrar_transaccion(TiposTransacciones::IngresoFiat(datos))?;
             self.guardar_balances_info()?;
-            self.guardar_transacciones_info()?;
+            self.registrar_transaccion(TiposTransacciones::IngresoFiat(datos))?;
             return Ok(());
         }
         return Err(Errores::ErrorOperatoria(ErroresOperatoria::Inexistente(
@@ -1026,8 +1025,8 @@ impl Plataforma {
                             cr.0.clone(),
                             cr.get_cotiza(),
                         );
-                        self.registrar_transaccion(TiposTransacciones::CompraCriptomoneda(datos))?;
                         self.guardar_balances_info()?;
+                        self.registrar_transaccion(TiposTransacciones::CompraCriptomoneda(datos))?;
                         return Ok(());
                     }
 
@@ -1076,8 +1075,8 @@ impl Plataforma {
                             cr.0.clone(),
                             cr.get_cotiza(),
                         );
-                        self.registrar_transaccion(TiposTransacciones::VentaCriptomoneda(datos))?;
                         self.guardar_balances_info()?;
+                        self.registrar_transaccion(TiposTransacciones::VentaCriptomoneda(datos))?;
                         return Ok(());
                     }
                     return Err(Errores::ErrorOperatoria(ErroresOperatoria::Denegado(
@@ -1130,10 +1129,10 @@ impl Plataforma {
                                 cr.get_cotiza(),
                                 b.clone(),
                             );
+                            self.guardar_balances_info()?;
                             self.registrar_transaccion(TiposTransacciones::RetiroCriptomoneda(
                                 datos,
                             ))?;
-                            self.guardar_balances_info()?;
                             return Ok(());
                         }
                     }
@@ -1159,8 +1158,6 @@ impl Plataforma {
         nomCripto: &String,
         nomBlockchain: &String,
     ) -> Result<(), Errores> {
-        let mut pude = false;
-
         if let Some(u) = self
             .usuarios
             .iter_mut()
@@ -1182,10 +1179,10 @@ impl Plataforma {
                             cr.get_cotiza(),
                             b.clone(),
                         );
+                        self.guardar_balances_info()?;
                         self.registrar_transaccion(TiposTransacciones::RecepcionCriptomoneda(
                             datos,
                         ))?;
-                        self.guardar_balances_info()?;
                         return Ok(());
                     }
                 }
@@ -1216,8 +1213,8 @@ impl Plataforma {
             if u.is_verificado() {
                 if u.retirar_monto_fiat(m) {
                     let datos = DatosRetiro::new(u.datos.clone(), f, m, med);
-                    self.registrar_transaccion(TiposTransacciones::RetiroFiat(datos))?;
                     self.guardar_balances_info()?;
+                    self.registrar_transaccion(TiposTransacciones::RetiroFiat(datos))?;
                     return Ok(());
                 }
                 return Err(Errores::ErrorOperatoria(ErroresOperatoria::Denegado(
