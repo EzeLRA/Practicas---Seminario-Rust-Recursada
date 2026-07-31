@@ -17,7 +17,6 @@ use std::{
 #[derive(Debug)]
 enum ErroresOperatoria {
     Inexistente(String),
-    EstructuraVacia(String),
     ContratoActivo(String),
     Rechazado(String),
 }
@@ -27,9 +26,6 @@ impl Display for ErroresOperatoria {
         match self {
             ErroresOperatoria::Inexistente(val) => {
                 write!(f, "No se encontro el elemento en la estructura {} ", val)
-            }
-            ErroresOperatoria::EstructuraVacia(val) => {
-                write!(f, "La estrucutra {} no dispone de elementos ", val)
             }
             ErroresOperatoria::ContratoActivo(val) => write!(
                 f,
@@ -308,7 +304,7 @@ use std::collections::HashMap;
 #[derive(PartialEq, Eq, Debug, Clone, Hash, Serialize, Deserialize)]
 enum TipoSuscripcion {
     Basic,
-    Clasic,
+    Classic,
     Super,
 }
 
@@ -362,7 +358,7 @@ struct ContratoSuscripcion {
     tipo_pago: MediosDePago,
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 struct Usuario {
     nombre: String,
     dni: u64,
@@ -371,6 +367,16 @@ struct Usuario {
 /*
     Estructura plataforma
 */
+
+//Se persiste los datos completos de la plataforma usuarios-suscripciones
+#[derive(Serialize, Deserialize)]
+struct DatosPlataforma(Vec<Usuario>, Vec<ContratoSuscripcion>);
+
+impl Default for DatosPlataforma {
+    fn default() -> DatosPlataforma {
+        DatosPlataforma(Vec::new(), Vec::new())
+    }
+}
 
 struct Plataforma {
     usuarios: Vec<Usuario>,
@@ -415,8 +421,8 @@ impl ContratoSuscripcion {
     pub fn upgrade_tipo(&mut self) -> bool {
         let mut exito = true;
         match self.tipo_suscripcion {
-            TipoSuscripcion::Basic => self.tipo_suscripcion = TipoSuscripcion::Clasic,
-            TipoSuscripcion::Clasic => self.tipo_suscripcion = TipoSuscripcion::Super,
+            TipoSuscripcion::Basic => self.tipo_suscripcion = TipoSuscripcion::Classic,
+            TipoSuscripcion::Classic => self.tipo_suscripcion = TipoSuscripcion::Super,
             TipoSuscripcion::Super => exito = false,
             _ => exito = false,
         }
@@ -427,8 +433,8 @@ impl ContratoSuscripcion {
         let mut exito = true;
 
         match self.tipo_suscripcion {
-            TipoSuscripcion::Super => self.tipo_suscripcion = TipoSuscripcion::Clasic,
-            TipoSuscripcion::Clasic => self.tipo_suscripcion = TipoSuscripcion::Basic,
+            TipoSuscripcion::Super => self.tipo_suscripcion = TipoSuscripcion::Classic,
+            TipoSuscripcion::Classic => self.tipo_suscripcion = TipoSuscripcion::Basic,
             TipoSuscripcion::Basic => exito = false,
             _ => exito = false,
         }
@@ -442,32 +448,34 @@ impl ContratoSuscripcion {
 
 impl Plataforma {
     pub fn new(path_in: &str) -> Plataforma {
-        let suscripciones: Vec<ContratoSuscripcion> =
-            match Plataforma::recuperar_informacion(path_in) {
-                Ok(datos) => datos,
-                Err(_) => Vec::new(),
-            };
+        let datos = match Plataforma::recuperar_informacion(path_in) {
+            Ok(info) => info,
+            Err(_) => DatosPlataforma::default(),
+        };
         return Plataforma {
-            usuarios: Vec::new(),
-            registro_suscripciones: suscripciones,
+            usuarios: datos.0,
+            registro_suscripciones: datos.1,
             path: path_in.to_string(),
         };
     }
     /*
         Nueva implementacion - TP5
     */
-    fn recuperar_informacion(path: &str) -> Result<Vec<ContratoSuscripcion>, Errores> {
+
+    fn recuperar_informacion(path: &str) -> Result<DatosPlataforma, Errores> {
         let file = File::open(path).map_err(Errores::ErrorIO)?;
-        let suscripciones: Vec<ContratoSuscripcion> =
-            serde_json::from_reader(file).map_err(Errores::ErrorSerde)?;
-        Ok(suscripciones)
+        let datos: DatosPlataforma = serde_json::from_reader(file).map_err(Errores::ErrorSerde)?;
+        return Ok(datos);
     }
+
     fn guardar_informacion(&self) -> Result<(), Errores> {
         let mut file = File::create(&self.path)?;
-        let serialized = serde_json::to_string(&self.registro_suscripciones)?;
+        let datos = DatosPlataforma(self.usuarios.clone(), self.registro_suscripciones.clone());
+        let serialized = serde_json::to_string(&datos)?;
         file.write_all(serialized.as_bytes())?;
-        return Ok(());
+        Ok(())
     }
+
     /*
         Metodos primarios
     */
@@ -475,13 +483,15 @@ impl Plataforma {
     fn usuario_en_sistema(&self, user_dni: u64) -> bool {
         return self.usuarios.iter().any(|user| user.get_dni() == user_dni);
     }
-    pub fn registrar_usuario(&mut self, u: &Usuario) -> bool {
+    pub fn registrar_usuario(&mut self, u: &Usuario) -> Result<(), Errores> {
         if !self.usuario_en_sistema(u.get_dni()) {
             self.usuarios.push(u.clone());
-        } else {
-            return false;
+            self.guardar_informacion()?;
+            return Ok(());
         }
-        return true;
+        return Err(Errores::ErrorOperatoria(ErroresOperatoria::Rechazado(
+            "Usuario existente".to_string(),
+        )));
     }
     pub fn registrar_contrato(&mut self, c: &ContratoSuscripcion) -> Result<(), Errores> {
         if self.usuario_en_sistema(c.dni_usuario) {
@@ -692,10 +702,10 @@ mod test_ejercicio3 {
 
         //Cambio hecho
         assert!(s1.upgrade_tipo());
-        assert_eq!(s1.tipo_suscripcion, TipoSuscripcion::Clasic);
+        assert_eq!(s1.tipo_suscripcion, TipoSuscripcion::Classic);
 
         assert!(s2.downgrade_tipo());
-        assert_eq!(s2.tipo_suscripcion, TipoSuscripcion::Clasic);
+        assert_eq!(s2.tipo_suscripcion, TipoSuscripcion::Classic);
     }
 
     #[test]
@@ -704,11 +714,17 @@ mod test_ejercicio3 {
         let mut user1 = Usuario::new(&"Marco", 12345);
         let mut user2 = Usuario::new(&"Marco", 1234);
 
-        assert!(sistema.registrar_usuario(&user1));
-        assert!(sistema.registrar_usuario(&user2));
+        assert!(sistema.registrar_usuario(&user1).is_ok());
+        assert!(sistema.registrar_usuario(&user2).is_ok());
         assert_eq!(sistema.usuarios.len(), 2);
-        assert!(!sistema.registrar_usuario(&user1));
-        assert!(!sistema.registrar_usuario(&user2));
+        assert!(sistema.registrar_usuario(&user1).is_err_and(|res| matches!(
+            res,
+            Errores::ErrorOperatoria(ErroresOperatoria::Rechazado(_))
+        )));
+        assert!(sistema.registrar_usuario(&user2).is_err_and(|res| matches!(
+            res,
+            Errores::ErrorOperatoria(ErroresOperatoria::Rechazado(_))
+        )));
         assert_eq!(sistema.usuarios.len(), 2);
 
         let mut s1 = ContratoSuscripcion::new(
@@ -754,7 +770,7 @@ mod test_ejercicio3 {
         }));
         let mut s2 = ContratoSuscripcion::new(
             12345,
-            &TipoSuscripcion::Clasic,
+            &TipoSuscripcion::Classic,
             5000.0,
             5,
             Fecha::new(20, 01, 2025),
@@ -782,9 +798,6 @@ mod test_ejercicio3 {
         let mut user1 = Usuario::new(&"Patricio", 12345);
         let mut user2 = Usuario::new(&"Patricio", 1234);
 
-        sistema.registrar_usuario(&user1);
-        sistema.registrar_usuario(&user2);
-
         //Suscripcion para user2
         let mut s1 = ContratoSuscripcion::new(
             1234,
@@ -803,6 +816,33 @@ mod test_ejercicio3 {
             Fecha::new(20, 01, 2025),
             &MediosDePago::Efectivo,
         );
+
+        //Verifico inexistencia de usuarios
+        assert!(sistema.cancelar_suscripcion(&user1).is_err_and(|e| {
+            assert!(!e.to_string().is_empty());
+            matches!(
+                e,
+                Errores::ErrorOperatoria(ErroresOperatoria::Inexistente(_))
+            )
+        }));
+        assert!(sistema.downgrade(&user1).is_err_and(|e| {
+            assert!(!e.to_string().is_empty());
+            matches!(
+                e,
+                Errores::ErrorOperatoria(ErroresOperatoria::Inexistente(_))
+            )
+        }));
+        assert!(sistema.upgrade(&user1).is_err_and(|e| {
+            assert!(!e.to_string().is_empty());
+            matches!(
+                e,
+                Errores::ErrorOperatoria(ErroresOperatoria::Inexistente(_))
+            )
+        }));
+
+        //Registro de usuarios
+        sistema.registrar_usuario(&user1);
+        sistema.registrar_usuario(&user2);
 
         assert!(sistema.registrar_contrato(&s1).is_ok());
         assert!(sistema.registrar_contrato(&s2).is_ok());
@@ -824,7 +864,7 @@ mod test_ejercicio3 {
 
         s1 = ContratoSuscripcion::new(
             1234,
-            &TipoSuscripcion::Clasic,
+            &TipoSuscripcion::Classic,
             2500.0,
             5,
             Fecha::new(20, 01, 2025),
@@ -832,6 +872,16 @@ mod test_ejercicio3 {
         );
         assert!(sistema.registrar_contrato(&s1).is_ok());
         assert!(sistema.cancelar_suscripcion(&user1).is_ok());
+
+        assert!(sistema.cancelar_suscripcion(&user1).is_err_and(|e| {
+            assert!(!e.to_string().is_empty());
+            matches!(e, Errores::ErrorOperatoria(ErroresOperatoria::Rechazado(_)))
+        }));
+
+        assert!(sistema.downgrade(&user1).is_err_and(|e| {
+            assert!(!e.to_string().is_empty());
+            matches!(e, Errores::ErrorOperatoria(ErroresOperatoria::Rechazado(_)))
+        }));
 
         assert_eq!(sistema.registro_suscripciones.len(), 5);
         assert_eq!(sistema.listado_suscripciones(true).len(), 1);
@@ -851,10 +901,10 @@ mod test_ejercicio3 {
         let user3 = Usuario::new(&"Matias", 4554);
         let user4 = Usuario::new(&"David", 3487);
 
-        sistema.registrar_usuario(&user1);
-        sistema.registrar_usuario(&user2);
-        sistema.registrar_usuario(&user3);
-        sistema.registrar_usuario(&user4);
+        sistema.registrar_usuario(&user1)?;
+        sistema.registrar_usuario(&user2)?;
+        sistema.registrar_usuario(&user3)?;
+        sistema.registrar_usuario(&user4)?;
 
         let s1 = ContratoSuscripcion::new(
             12345,
@@ -957,7 +1007,7 @@ mod test_ejercicio3 {
 
         assert!(
             sis.tipo_suscripcion_max_activas()
-                .is_some_and(|res| { matches!(res, TipoSuscripcion::Clasic) }),
+                .is_some_and(|res| { matches!(res, TipoSuscripcion::Classic) }),
             "Debio retornar un maximo"
         );
 

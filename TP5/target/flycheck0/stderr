@@ -1,5 +1,5 @@
-   4.409058200s  INFO prepare_target{force=false package_id=TP5 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5) target="TP5"}: cargo::core::compiler::fingerprint: fingerprint error for TP5 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5)/Check { test: false }/TargetInner { name: "TP5", doc: true, ..: with_path("C:\\Users\\ezeleo\\Documents\\Programas\\Practicas---Seminario-Rust-Recursada\\TP5\\src\\main.rs", Edition2024) }
-   4.409509900s  INFO prepare_target{force=false package_id=TP5 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5) target="TP5"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5\target\debug\.fingerprint\TP5-7b4df391b8b5da38\bin-TP5`
+   0.642511500s  INFO prepare_target{force=false package_id=TP5 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5) target="TP5"}: cargo::core::compiler::fingerprint: fingerprint error for TP5 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5)/Check { test: false }/TargetInner { name: "TP5", doc: true, ..: with_path("C:\\Users\\ezeleo\\Documents\\Programas\\Practicas---Seminario-Rust-Recursada\\TP5\\src\\main.rs", Edition2024) }
+   0.643042600s  INFO prepare_target{force=false package_id=TP5 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5) target="TP5"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5\target\debug\.fingerprint\TP5-7b4df391b8b5da38\bin-TP5`
 
 Caused by:
     El sistema no puede encontrar el archivo especificado. (os error 2)
@@ -26,8 +26,185 @@ Stack backtrace:
   18: git_midx_writer_dump
   19: BaseThreadInitThunk
   20: RtlUserThreadStart
-   5.882743500s  INFO prepare_target{force=false package_id=TP5 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5) target="TP5"}: cargo::core::compiler::fingerprint: fingerprint error for TP5 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5)/Check { test: true }/TargetInner { name: "TP5", doc: true, ..: with_path("C:\\Users\\ezeleo\\Documents\\Programas\\Practicas---Seminario-Rust-Recursada\\TP5\\src\\main.rs", Edition2024) }
-   5.902022100s  INFO prepare_target{force=false package_id=TP5 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5) target="TP5"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5\target\debug\.fingerprint\TP5-e0477ad4d5403a3d\test-bin-TP5`
+   0.799745400s  INFO prepare_target{force=false package_id=rand v0.10.2 target="rand"}: cargo::core::compiler::fingerprint: fingerprint error for rand v0.10.2/Check { test: false }/TargetInner { ..: lib_target("rand", ["lib"], "C:\\Users\\ezeleo\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\rand-0.10.2\\src\\lib.rs", Edition2024) }
+   0.799995400s  INFO prepare_target{force=false package_id=rand v0.10.2 target="rand"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5\target\debug\.fingerprint\rand-af9538694c210764\lib-rand`
+
+Caused by:
+    El sistema no puede encontrar el archivo especificado. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_libgit2_prerelease
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: <unknown>
+  17: git_midx_writer_dump
+  18: git_filter_source_repo
+  19: git_midx_writer_dump
+  20: BaseThreadInitThunk
+  21: RtlUserThreadStart
+   0.821199100s  INFO prepare_target{force=false package_id=serde v1.0.228 target="serde"}: cargo::core::compiler::fingerprint: fingerprint error for serde v1.0.228/Check { test: false }/TargetInner { ..: lib_target("serde", ["lib"], "C:\\Users\\ezeleo\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\serde-1.0.228\\src\\lib.rs", Edition2021) }
+   0.821394200s  INFO prepare_target{force=false package_id=serde v1.0.228 target="serde"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5\target\debug\.fingerprint\serde-99b14f990d9fd3d8\lib-serde`
+
+Caused by:
+    El sistema no puede encontrar el archivo especificado. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_libgit2_prerelease
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: <unknown>
+  17: git_midx_writer_dump
+  18: git_filter_source_repo
+  19: git_midx_writer_dump
+  20: BaseThreadInitThunk
+  21: RtlUserThreadStart
+   0.835756600s  INFO prepare_target{force=false package_id=serde_derive v1.0.228 target="serde_derive"}: cargo::core::compiler::fingerprint: fingerprint error for serde_derive v1.0.228/Build/TargetInner { for_host: true, proc_macro: true, ..: lib_target("serde_derive", ["proc-macro"], "C:\\Users\\ezeleo\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\serde_derive-1.0.228\\src\\lib.rs", Edition2021) }
+   0.870676800s  INFO prepare_target{force=false package_id=serde_derive v1.0.228 target="serde_derive"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5\target\debug\.fingerprint\serde_derive-cb739b12fa1c6751\lib-serde_derive`
+
+Caused by:
+    El sistema no puede encontrar el archivo especificado. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_filter_source_repo
+  13: git_libgit2_prerelease
+  14: <unknown>
+  15: <unknown>
+  16: <unknown>
+  17: <unknown>
+  18: git_midx_writer_dump
+  19: git_filter_source_repo
+  20: git_midx_writer_dump
+  21: BaseThreadInitThunk
+  22: RtlUserThreadStart
+   0.893511400s  INFO prepare_target{force=false package_id=serde_json v1.0.150 target="serde_json"}: cargo::core::compiler::fingerprint: fingerprint error for serde_json v1.0.150/Check { test: false }/TargetInner { ..: lib_target("serde_json", ["lib"], "C:\\Users\\ezeleo\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\serde_json-1.0.150\\src\\lib.rs", Edition2021) }
+   0.893796300s  INFO prepare_target{force=false package_id=serde_json v1.0.150 target="serde_json"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5\target\debug\.fingerprint\serde_json-57333092b0e00671\lib-serde_json`
+
+Caused by:
+    El sistema no puede encontrar el archivo especificado. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_libgit2_prerelease
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: <unknown>
+  17: git_midx_writer_dump
+  18: git_filter_source_repo
+  19: git_midx_writer_dump
+  20: BaseThreadInitThunk
+  21: RtlUserThreadStart
+   0.900071700s  INFO prepare_target{force=false package_id=itoa v1.0.18 target="itoa"}: cargo::core::compiler::fingerprint: fingerprint error for itoa v1.0.18/Check { test: false }/TargetInner { ..: lib_target("itoa", ["lib"], "C:\\Users\\ezeleo\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\itoa-1.0.18\\src\\lib.rs", Edition2021) }
+   0.900339900s  INFO prepare_target{force=false package_id=itoa v1.0.18 target="itoa"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5\target\debug\.fingerprint\itoa-9bca1edbe7482c6d\lib-itoa`
+
+Caused by:
+    El sistema no puede encontrar el archivo especificado. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_filter_source_repo
+  13: git_libgit2_prerelease
+  14: <unknown>
+  15: <unknown>
+  16: <unknown>
+  17: <unknown>
+  18: git_midx_writer_dump
+  19: git_filter_source_repo
+  20: git_midx_writer_dump
+  21: BaseThreadInitThunk
+  22: RtlUserThreadStart
+   0.903452400s  INFO prepare_target{force=false package_id=memchr v2.8.2 target="memchr"}: cargo::core::compiler::fingerprint: fingerprint error for memchr v2.8.2/Check { test: false }/TargetInner { benched: false, ..: lib_target("memchr", ["lib"], "C:\\Users\\ezeleo\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\memchr-2.8.2\\src\\lib.rs", Edition2021) }
+   0.903656000s  INFO prepare_target{force=false package_id=memchr v2.8.2 target="memchr"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5\target\debug\.fingerprint\memchr-1d959a54dc984500\lib-memchr`
+
+Caused by:
+    El sistema no puede encontrar el archivo especificado. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_filter_source_repo
+  13: git_libgit2_prerelease
+  14: <unknown>
+  15: <unknown>
+  16: <unknown>
+  17: <unknown>
+  18: git_midx_writer_dump
+  19: git_filter_source_repo
+  20: git_midx_writer_dump
+  21: BaseThreadInitThunk
+  22: RtlUserThreadStart
+   0.959015900s  INFO prepare_target{force=false package_id=TP5 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5) target="TP5"}: cargo::core::compiler::fingerprint: fingerprint error for TP5 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5)/Check { test: true }/TargetInner { name: "TP5", doc: true, ..: with_path("C:\\Users\\ezeleo\\Documents\\Programas\\Practicas---Seminario-Rust-Recursada\\TP5\\src\\main.rs", Edition2024) }
+   0.959245300s  INFO prepare_target{force=false package_id=TP5 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5) target="TP5"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5\target\debug\.fingerprint\TP5-e0477ad4d5403a3d\test-bin-TP5`
 
 Caused by:
     El sistema no puede encontrar el archivo especificado. (os error 2)
@@ -54,5 +231,11 @@ Stack backtrace:
   18: git_midx_writer_dump
   19: BaseThreadInitThunk
   20: RtlUserThreadStart
+   Compiling serde_derive v1.0.228
+    Checking itoa v1.0.18
+    Checking memchr v2.8.2
+    Checking serde_json v1.0.150
+    Checking rand v0.10.2
+    Checking serde v1.0.228
     Checking TP5 v0.1.0 (C:\Users\ezeleo\Documents\Programas\Practicas---Seminario-Rust-Recursada\TP5)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 37.50s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 29s
